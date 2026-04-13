@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Empresa — BuscaPrint</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f7f5f2;--white:#fff;--surface:#faf9f7;--border:#e8e3dc;--border2:#d5cec4;
+  --text:#1a1612;--muted:#8a8278;--accent:#c8763a;--al:#fdf0e6;
+  --green:#2d7a4f;--green-bg:#edf7f2;--blue:#1e5fa8;--blue-bg:#eaf0fb;
+  --yellow:#b8860b;--yellow-bg:#fef9e7;--orange:#c45c1a;--orange-bg:#fef3ea;
+  --red:#c0392b;--red-bg:#fdecea;--dark:#2c2620;--dark-bg:#ede9e4;
+  --purple:#6b21a8;--purple-bg:#f5f0ff;
+  --shadow:0 2px 12px rgba(0,0,0,.06);--shadow-lg:0 8px 32px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{background:var(--white);border-bottom:1px solid var(--border);padding:0 20px;height:58px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.logo-mark{background:var(--accent);color:white;width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;flex-shrink:0;}
+.header-title{font-size:15px;font-weight:700;}
+.header-sub{font-size:11px;color:var(--muted);}
+.header-actions{margin-left:auto;display:flex;gap:7px;align-items:center;}
+.sync-status{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px;font-family:'JetBrains Mono',monospace;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+.sync-dot.offline{background:var(--red);animation:none;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn{padding:7px 14px;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{background:#b56830;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg);color:var(--text);}
+.btn-green{background:var(--green);color:white;}
+.btn-green:hover{background:#236040;}
+.btn-red{background:var(--red);color:white;}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-xs{padding:3px 8px;font-size:11px;}
+.layout{display:flex;flex:1;overflow:hidden;}
+/* NAV */
+nav{width:220px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:12px 0;display:flex;flex-direction:column;overflow-y:auto;}
+.nav-section{margin-bottom:2px;}
+.nav-label{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:8px 18px 3px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .12s;}
+.nav-item:hover{background:var(--bg);color:var(--text);}
+.nav-item.active{background:var(--al);color:var(--accent);font-weight:600;}
+.nav-item .icon{font-size:14px;}
+.nav-badge{margin-left:auto;color:white;font-size:9px;font-weight:800;border-radius:20px;padding:1px 6px;min-width:17px;text-align:center;background:var(--red);}
+.nav-badge.or{background:var(--orange);}
+.nav-badge.bl{background:var(--blue);}
+.nav-badge.gr{background:var(--green);}
+/* MAIN */
+main{flex:1;overflow-y:auto;padding:22px;}
+/* CARDS / STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stats-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--white);border:1px solid var(--border);border-radius:13px;padding:16px 18px;}
+.stat-label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+.stat-value{font-size:24px;font-weight:800;}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+.stat-delta{font-size:11px;font-weight:700;margin-top:3px;}
+.up{color:var(--green)}.down{color:var(--red)}
+/* STATUS */
+.status{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.s-recente{background:var(--green-bg);color:var(--green);}
+.s-ativo{background:var(--blue-bg);color:var(--blue);}
+.s-morno{background:var(--yellow-bg);color:var(--yellow);}
+.s-esfriando{background:var(--orange-bg);color:var(--orange);}
+.s-inativo{background:var(--red-bg);color:var(--red);}
+.s-abandonado{background:var(--dark-bg);color:var(--dark);}
+.s-revendedora{background:var(--purple-bg);color:var(--purple);}
+/* CARD BOX */
+.card{background:var(--white);border:1px solid var(--border);border-radius:13px;overflow:hidden;margin-bottom:18px;}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.card-title{font-size:13px;font-weight:700;}
+.card-sub{font-size:11px;color:var(--muted);margin-left:auto;}
+/* TABLE */
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:9px 14px;background:var(--surface);border-bottom:1px solid var(--border);}
+td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--bg);}
+.td-actions{display:flex;gap:5px;}
+.icon-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:12px;cursor:pointer;transition:all .12s;}
+.icon-btn:hover{background:var(--bg);}
+/* VIEWS */
+.view{display:none;}.view.active{display:block;}
+/* SUB TABS (financeiro) */
+.fin-tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+.ftab{padding:6px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--muted);transition:all .12s;}
+.ftab:hover{background:var(--bg);color:var(--text);}
+.ftab.active{background:var(--accent);color:white;border-color:var(--accent);}
+.fin-view{display:none;}.fin-view.active{display:block;}
+/* PERIOD TABS */
+.period-tabs{display:flex;gap:6px;margin-bottom:18px;}
+.ptab{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--muted);transition:all .12s;}
+.ptab.active{background:var(--accent);color:white;border-color:var(--accent);}
+/* CHART */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.chart-box{background:var(--white);border:1px solid var(--border);border-radius:13px;padding:18px;}
+.chart-box-full{background:var(--white);border:1px solid var(--border);border-radius:13px;padding:18px;margin-bottom:18px;}
+.chart-title{font-size:12px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:16px;}
+.modal-backdrop.open{display:flex;}
+.modal{background:var(--white);border-radius:16px;width:540px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:slideUp .22s ease;}
+.modal-lg{width:700px;}
+.modal-xl{width:880px;}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{padding:18px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.modal-title{font-size:15px;font-weight:700;}
+.modal-close{margin-left:auto;background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);}
+.modal-body{padding:18px 22px;}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-full{grid-column:1/-1;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:11px;font-weight:600;color:var(--muted);}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-family:inherit;font-size:12px;color:var(--text);outline:none;transition:border-color .15s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);background:var(--white);}
+.form-group textarea{resize:vertical;min-height:65px;}
+.form-section{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:14px 0 3px;padding-bottom:5px;border-bottom:1px solid var(--border);grid-column:1/-1;}
+/* ALERT */
+.alert{border-radius:9px;padding:10px 14px;font-size:12px;margin-bottom:14px;}
+.alert-warn{background:var(--yellow-bg);color:var(--yellow);}
+.alert-info{background:var(--blue-bg);color:var(--blue);}
+.alert-red{background:var(--red-bg);color:var(--red);}
+.alert-green{background:var(--green-bg);color:var(--green);}
+.alert-orange{background:var(--orange-bg);color:var(--orange);}
+/* CHAT */
+.chat-wrap{display:none;flex-direction:column;height:calc(100vh - 58px);margin:-22px;}
+.chat-wrap.chat-active{display:flex;}
+.quick-cmds{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--white);}
+.qcmd{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;cursor:pointer;font-family:'JetBrains Mono',monospace;color:var(--accent);transition:all .12s;}
+.qcmd:hover{background:var(--al);border-color:var(--accent);}
+.chat-messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px;background:var(--bg);}
+.chat-msg{display:flex;gap:9px;animation:fadeIn .22s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.user{flex-direction:row-reverse;}
+.chat-av{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-top:2px;}
+.chat-av.ai{background:var(--accent);color:white;}
+.chat-av.user{background:var(--white);border:1px solid var(--border);}
+.chat-bubble{max-width:76%;padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.7;border:1px solid var(--border);background:var(--white);}
+.chat-msg.user .chat-bubble{background:var(--accent);color:white;border-color:var(--accent);font-size:12px;}
+.chat-bubble h3{font-size:13px;font-weight:700;margin:9px 0 4px;}
+.chat-bubble h3:first-child{margin-top:0;}
+.chat-bubble code{background:var(--bg);padding:1px 4px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);}
+.chat-bubble strong{font-weight:700;}
+.chat-bubble hr{border:none;border-top:1px solid var(--border);margin:9px 0;}
+.chat-bubble ul{padding-left:16px;}
+.chat-bubble li{margin-bottom:2px;}
+.chat-bubble table{width:100%;border-collapse:collapse;font-size:11px;margin:7px 0;}
+.chat-bubble th{background:var(--bg);padding:5px 9px;font-size:10px;text-align:left;}
+.chat-bubble td{padding:4px 9px;border-bottom:1px solid var(--border);}
+.chat-input-wrap{padding:12px 18px;border-top:1px solid var(--border);background:var(--white);display:flex;gap:8px;}
+.chat-input-wrap textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 13px;font-family:inherit;font-size:12px;resize:none;outline:none;min-height:42px;max-height:110px;transition:border-color .15s;}
+.chat-input-wrap textarea:focus{border-color:var(--accent);background:var(--white);}
+.chat-send{background:var(--accent);color:white;border:none;border-radius:9px;width:42px;height:42px;font-size:16px;cursor:pointer;flex-shrink:0;transition:all .15s;}
+.chat-send:hover{background:#b56830;}
+.chat-send:disabled{opacity:.4;cursor:not-allowed;}
+.typing-dots{display:flex;gap:4px;align-items:center;padding:11px 15px;}
+.typing-dots span{width:5px;height:5px;background:var(--muted);border-radius:50%;animation:bounce 1.2s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s;}
+.typing-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+/* PROFILE */
+.profile-header{background:linear-gradient(135deg,#fff8f3,#fdf3ea);border:1px solid #f0d9c5;border-radius:13px;padding:18px 22px;display:flex;gap:16px;margin-bottom:18px;}
+.profile-avatar{width:56px;height:56px;background:var(--accent);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:white;flex-shrink:0;}
+.profile-name{font-size:18px;font-weight:800;}
+.profile-stats{display:flex;gap:20px;margin-top:10px;flex-wrap:wrap;}
+.p-stat-val{font-size:18px;font-weight:800;color:var(--accent);}
+.p-stat-label{font-size:10px;color:var(--muted);}
+.history-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.history-item:last-child{border-bottom:none;}
+/* MISC */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:42px;margin-bottom:10px;}
+.empty-text{font-size:13px;}
+.badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;}
+.badge-hist{background:#ede8ff;color:#5b21b6;}
+.badge-venc{background:var(--red-bg);color:var(--red);}
+.badge-hoje{background:var(--yellow-bg);color:var(--yellow);}
+.badge-ok{background:var(--green-bg);color:var(--green);}
+@keyframes spin{to{transform:rotate(360deg)}}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.tag{display:inline-flex;padding:2px 8px;border-radius:5px;font-size:10px;font-weight:700;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">G</div>
+  <div>
+    <div class="header-title">Gestão de Empresa — BuscaPrint</div>
+    <div class="header-sub">Clientes · Financeiro · Produtos · Inteligência</div>
+  </div>
+  <div class="header-actions">
+    <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncText">conectando...</span></div>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileImport').click()">📥 Importar</button>
+    <input type="file" id="fileImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarPlanilha(event)">
+    <button class="btn btn-ghost btn-sm" onclick="openModal('modalCompra')">🛒 Registrar venda</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modalCliente')">+ Novo cliente</button>
+  </div>
+</header>
+
+<div class="layout">
+<nav>
+  <div class="nav-section">
+    <div class="nav-label">Visão Geral</div>
+    <div class="nav-item active" onclick="showView('dashboard',this)"><span class="icon">📊</span> Dashboard</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Financeiro</div>
+    <div class="nav-item" onclick="showView('fin-resumo',this)"><span class="icon">💰</span> Resumo Financeiro</div>
+    <div class="nav-item" onclick="showView('fin-caixa',this)"><span class="icon">🏦</span> Contas &amp; Caixa</div>
+    <div class="nav-item" onclick="showView('fin-dre',this)"><span class="icon">📑</span> DRE</div>
+    <div class="nav-item" onclick="showView('fin-metricas',this)"><span class="icon">📈</span> Métricas &amp; KPIs</div>
+    <div class="nav-item" onclick="showView('fin-relatorios',this)"><span class="icon">🗂️</span> Relatórios</div>
+    <div class="nav-item" onclick="showView('fin-historico',this)"><span class="icon">🗄️</span> Histórico Financeiro</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Produtos</div>
+    <div class="nav-item" onclick="showView('skus',this)"><span class="icon">🏷️</span> SKUs &amp; Precificação</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Clientes</div>
+    <div class="nav-item" onclick="showView('clientes',this)"><span class="icon">👥</span> Clientes Ativos</div>
+    <div class="nav-item" onclick="showView('historicos',this)"><span class="icon">📁</span> Históricos <span class="nav-badge bl" id="badge-hist">0</span></div>
+    <div class="nav-item" onclick="showView('agenda',this)"><span class="icon">📅</span> Agenda <span class="nav-badge" id="badge-agenda">0</span></div>
+    <div class="nav-item" onclick="showView('abandonados',this)"><span class="icon">⚫</span> Abandonados <span class="nav-badge" id="badge-abandonados">0</span></div>
+    <div class="nav-item" onclick="showView('inativos',this)"><span class="icon">🔴</span> Inativos <span class="nav-badge or" id="badge-inativos">0</span></div>
+    <div class="nav-item" onclick="showView('reativacao',this)"><span class="icon">🟠</span> Reativar <span class="nav-badge or" id="badge-reativacao">0</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Inteligência IA</div>
+    <div class="nav-item" onclick="showView('gestor',this)"><span class="icon">🏢</span> Gestor de Empresa</div>
+    <div class="nav-item" onclick="showView('crm',this)"><span class="icon">💬</span> Consultor CRM</div>
+  </div>
+</nav>
+
+<main id="mainContent">
+
+<!-- DASHBOARD -->
+<div class="view active" id="view-dashboard">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Clientes Ativos</div><div class="stat-value" id="st-total">0</div><div class="stat-sub">na carteira</div></div>
+    <div class="stat-card"><div class="stat-label">Fat. Este Mês</div><div class="stat-value" id="st-fat">R$0</div><div class="stat-delta" id="st-fat-delta">—</div></div>
+    <div class="stat-card"><div class="stat-label">Lucro Estimado</div><div class="stat-value" id="st-lucro">R$0</div><div class="stat-delta" id="st-lucro-delta">—</div></div>
+    <div class="stat-card"><div class="stat-label">Ações Urgentes</div><div class="stat-value" id="st-acao" style="color:var(--red)">0</div><div class="stat-sub">clientes hoje</div></div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">A Receber</div><div class="stat-value" id="st-receber" style="color:var(--green)">R$0</div><div class="stat-sub">em aberto</div></div>
+    <div class="stat-card"><div class="stat-label">A Pagar</div><div class="stat-value" id="st-pagar" style="color:var(--red)">R$0</div><div class="stat-sub">em aberto</div></div>
+    <div class="stat-card"><div class="stat-label">SKUs Cadastrados</div><div class="stat-value" id="st-skus">0</div><div class="stat-sub">produtos</div></div>
+    <div class="stat-card"><div class="stat-label">Ticket Médio</div><div class="stat-value" id="st-ticket">R$0</div><div class="stat-sub">este mês</div></div>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span>⚠️</span><span class="card-title">Vencimentos Próximos (7 dias)</span></div>
+      <div id="dash-venc" style="padding:0"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>🔥</span><span class="card-title">Ações CRM Urgentes</span></div>
+      <div id="dash-crm-urg" style="padding:0"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>📊</span><span class="card-title">Faturamento — Últimos 6 Meses</span></div>
+    <div style="padding:16px"><canvas id="dashChart" height="100"></canvas></div>
+  </div>
+  <!-- PRODUTOS POR CATEGORIA -->
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span>🎨</span><span class="card-title">Produtos — Vendas por Categoria</span><span class="card-sub">este mês</span></div>
+      <div id="dashProdCat" style="padding:14px"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>🏆</span><span class="card-title">Top Produtos Mais Vendidos</span></div>
+      <div id="dashTopProd" style="padding:0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- FIN RESUMO -->
+<div class="view" id="view-fin-resumo">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">Resumo Financeiro</div><div style="font-size:12px;color:var(--muted)">Quinzenal · Mensal · Trimestral · Anual</div></div>
+    <button class="btn btn-ghost btn-sm" onclick="openModal('modalCustos')">⚙️ Custos mensais</button>
+  </div>
+  <div class="period-tabs">
+    <div class="ptab active" onclick="setResPeriod('quinzenal',this)">Quinzenal</div>
+    <div class="ptab" onclick="setResPeriod('mensal',this)">Mensal</div>
+    <div class="ptab" onclick="setResPeriod('trimestral',this)">Trimestral</div>
+    <div class="ptab" onclick="setResPeriod('anual',this)">Anual</div>
+  </div>
+  <div class="stats-row-3" id="resKpis"></div>
+  <div class="chart-grid">
+    <div class="chart-box"><div class="chart-title">📈 Faturamento por Período</div><canvas id="chartFat" height="170"></canvas></div>
+    <div class="chart-box"><div class="chart-title">💸 Fat. vs Custos vs Lucro</div><canvas id="chartLucro" height="170"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>📋</span><span class="card-title">Tabela Mensal</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportTabela('tabelaMensal','resumo-mensal')">📥 Exportar</button>
+    </div>
+    <div id="tabelaMensal"></div>
+  </div>
+</div>
+
+<!-- CONTAS & CAIXA -->
+<div class="view" id="view-fin-caixa">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">Contas &amp; Fluxo de Caixa</div><div style="font-size:12px;color:var(--muted)">A pagar, a receber, conciliação e projeções</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modalLancamento','receber')">+ A Receber</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modalLancamento','pagar')">+ A Pagar</button>
+    </div>
+  </div>
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Total a Receber</div><div class="stat-value" id="cx-receber" style="color:var(--green)">R$0</div></div>
+    <div class="stat-card"><div class="stat-label">Total a Pagar</div><div class="stat-value" id="cx-pagar" style="color:var(--red)">R$0</div></div>
+    <div class="stat-card"><div class="stat-label">Saldo Projetado</div><div class="stat-value" id="cx-saldo">R$0</div></div>
+    <div class="stat-card"><div class="stat-label">Vence em 7 dias</div><div class="stat-value" id="cx-vence7" style="color:var(--orange)">0</div></div>
+  </div>
+  <div class="chart-box-full">
+    <div class="chart-title">📊 Projeção de Caixa — 30 dias</div>
+    <canvas id="chartCaixa" height="100"></canvas>
+  </div>
+  <div class="row-2">
+    <div class="card">
+      <div class="card-header"><span>🟢</span><span class="card-title">Contas a Receber</span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportTabela('tabReceber','contas-receber')">📥</button>
+      </div>
+      <div id="tabReceber"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>🔴</span><span class="card-title">Contas a Pagar</span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportTabela('tabPagar','contas-pagar')">📥</button>
+      </div>
+      <div id="tabPagar"></div>
+    </div>
+  </div>
+</div>
+
+<!-- DRE -->
+<div class="view" id="view-fin-dre">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">DRE — Demonstração de Resultado</div><div style="font-size:12px;color:var(--muted)">MEI BuscaPrint · Receita Bruta · Lucro Bruto · EBITDA · Lucro Líquido</div></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <select id="dreMes" style="padding:6px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--white);outline:none;" onchange="renderDRE()"></select>
+      <button class="btn btn-ghost btn-sm" onclick="openModal('modalDREManual')">+ Lançar mês</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportDRE()">📥 Exportar</button>
+    </div>
+  </div>
+  <div id="dreContent"></div>
+</div>
+
+<!-- CUSTOS & MARGEM -->
+<div class="view" id="view-fin-custos">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">Custos, Precificação &amp; Margem</div><div style="font-size:12px;color:var(--muted)">Break-even · Markup · Margem de Contribuição</div></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modalCustoItem')">+ Novo custo</button>
+  </div>
+  <div id="custosContent"></div>
+</div>
+
+<!-- FOLHA & PRÓ-LABORE -->
+<div class="view" id="view-fin-folha">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">Folha &amp; Pró-labore</div><div style="font-size:12px;color:var(--muted)">2 sócios · Funcionários · Encargos · Provisões</div></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modalFolha')">+ Lançar folha</button>
+  </div>
+  <div id="folhaContent"></div>
+</div>
+
+<!-- MÉTRICAS -->
+<div class="view" id="view-fin-metricas">
+  <div style="margin-bottom:18px"><div style="font-size:18px;font-weight:800">Métricas &amp; KPIs</div><div style="font-size:12px;color:var(--muted)">CAC · LTV · Inadimplência · ROI · Dashboard</div></div>
+  <div id="metricasContent"></div>
+</div>
+
+<!-- RELATÓRIOS -->
+<div class="view" id="view-fin-relatorios">
+  <div style="margin-bottom:18px"><div style="font-size:18px;font-weight:800">Relatórios</div><div style="font-size:12px;color:var(--muted)">Gere e exporte relatórios quinzenais, mensais, trimestrais e anuais</div></div>
+  <div id="relatoriosContent"></div>
+</div>
+
+<!-- HISTÓRICO FINANCEIRO -->
+<div class="view" id="view-fin-historico">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">Histórico Financeiro</div><div style="font-size:12px;color:var(--muted)">Movimento de caixa até 5 anos anteriores + planilhas importadas</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileFinImport').click()">📤 Importar planilha</button>
+      <input type="file" id="fileFinImport" accept=".xlsx,.xls,.csv" style="display:none" onchange="importarFinanceiro(event)">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modalMovCaixa')">+ Lançar movimento</button>
+    </div>
+  </div>
+  <div id="historicoFinContent"></div>
+</div>
+
+<!-- SKUs -->
+<div class="view" id="view-skus">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div><div style="font-size:18px;font-weight:800">SKUs &amp; Produtos</div><div style="font-size:12px;color:var(--muted)">Personalizados · Empreendedores · Vendas por produto</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary btn-sm" onclick="openModal('modalSKU')">+ Novo produto</button>
+    </div>
+  </div>
+  <!-- Resumo por categoria -->
+  <div id="skuResumo" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"></div>
+  <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
+    <input id="skuSearch" type="text" placeholder="🔍 Buscar produto..." style="padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--white);outline:none;width:200px;" oninput="renderSKUs()">
+    <select id="skuCat" style="padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--white);outline:none;" onchange="renderSKUs()">
+      <option value="">Todas as categorias</option>
+      <option value="Personalizados">Personalizados</option>
+      <option value="Empreendedores">Empreendedores</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>🏷️</span><span class="card-title">Catálogo de Produtos</span><span class="card-sub" id="skuCount">0 produtos</span>
+      <button class="btn btn-ghost btn-sm" onclick="exportTabela('skuTableInner','skus-buscaprint')">📥 Exportar</button>
+    </div>
+    <div id="skuTable"></div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div class="view" id="view-clientes">
+  <div style="margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap">
+    <input id="searchInput" type="text" placeholder="🔍 Buscar cliente..." style="padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--white);outline:none;width:200px;" oninput="renderClientesList()">
+    <select id="filterStatus" style="padding:7px 12px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--white);outline:none;" onchange="renderClientesList()">
+      <option value="">Todos os status</option>
+      <option value="recente">🟢 Ativo Recente</option><option value="ativo">🔵 Ativo</option>
+      <option value="morno">🟡 Morno</option><option value="esfriando">🟠 Esfriando</option>
+      <option value="inativo">🔴 Inativo</option><option value="abandonado">⚫ Abandonado</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>👥</span><span class="card-title">Todos os Clientes</span><span class="card-sub" id="countClientes">0</span></div>
+    <div id="clientesTable"></div>
+  </div>
+</div>
+
+<!-- HISTÓRICOS CLIENTES -->
+<div class="view" id="view-historicos">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div><div style="font-size:16px;font-weight:700">Clientes Históricos</div><div style="font-size:12px;color:var(--muted)">Cadastros antigos para controle completo da carteira</div></div>
+    <button class="btn btn-primary btn-sm" onclick="openModal('modalHistorico')">+ Adicionar histórico</button>
+  </div>
+  <div class="card">
+    <div class="card-header"><span>📁</span><span class="card-title">Históricos</span><span class="card-sub" id="countHistoricos">0</span></div>
+    <div id="historicosTable"></div>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div class="view" id="view-agenda">
+  <div class="card">
+    <div class="card-header"><span>📅</span><span class="card-title">Agenda do Dia</span><span class="card-sub" id="todayDate"></span></div>
+    <div id="agendaContent" style="padding:16px"></div>
+  </div>
+</div>
+
+<!-- ABANDONADOS -->
+<div class="view" id="view-abandonados">
+  <div class="card"><div class="card-header"><span>⚫</span><span class="card-title">Carrinho Abandonado — Prioridade Máxima</span></div><div id="abandonadosContent"></div></div>
+</div>
+<!-- INATIVOS -->
+<div class="view" id="view-inativos">
+  <div class="card"><div class="card-header"><span>🔴</span><span class="card-title">Clientes Inativos (+90 dias)</span></div><div id="inativosContent"></div></div>
+</div>
+<!-- REATIVACAO -->
+<div class="view" id="view-reativacao">
+  <div class="card"><div class="card-header"><span>🟠</span><span class="card-title">Clientes para Reativar (60–90 dias)</span></div><div id="reativacaoContent"></div></div>
+</div>
+
+<!-- GESTOR IA -->
+<div class="chat-wrap" id="view-gestor">
+  <div class="quick-cmds">
+    <span class="qcmd" onclick="useGestor('/diagnostico')">🔍 /diagnostico</span>
+    <span class="qcmd" onclick="useGestor('/financeiro')">💰 /financeiro</span>
+    <span class="qcmd" onclick="useGestor('/dre')">📑 /dre</span>
+    <span class="qcmd" onclick="useGestor('/plano crescer')">📋 /plano</span>
+    <span class="qcmd" onclick="useGestor('/gargalos')">🚨 /gargalos</span>
+    <span class="qcmd" onclick="useGestor('/oportunidades')">🟢 /oportunidades</span>
+    <span class="qcmd" onclick="useGestor('/meta faturamento')">🎯 /meta</span>
+  </div>
+  <div class="chat-messages" id="gestorMessages"></div>
+  <div class="chat-input-wrap">
+    <textarea id="gestorInput" placeholder="Pergunte ao Gestor — /diagnostico, /financeiro, /plano, /dre..." rows="1" onkeydown="gestorKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="chat-send" id="gestorSend" onclick="sendGestor()">➤</button>
+  </div>
+</div>
+
+<!-- CRM IA -->
+<div class="chat-wrap" id="view-crm">
+  <div class="quick-cmds">
+    <span class="qcmd" onclick="useCrm('lista de clientes')">lista de clientes</span>
+    <span class="qcmd" onclick="useCrm('remarketing hoje')">remarketing hoje</span>
+    <span class="qcmd" onclick="useCrm('carrinho abandonado')">carrinho abandonado</span>
+    <span class="qcmd" onclick="useCrm('clientes inativos')">clientes inativos</span>
+    <span class="qcmd" onclick="useCrm('relatório de vendas')">relatório de vendas</span>
+    <span class="qcmd" onclick="useCrm('dicas de abordagem')">dicas de abordagem</span>
+  </div>
+  <div class="chat-messages" id="crmMessages"></div>
+  <div class="chat-input-wrap">
+    <textarea id="crmInput" placeholder="Consultor CRM — abordagens, remarketing, análise de carteira..." rows="1" onkeydown="crmKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="chat-send" id="crmSend" onclick="sendCrm()">➤</button>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ═══════════════ MODALS ═══════════════ -->
+
+<!-- NOVO CLIENTE -->
+<div class="modal-backdrop" id="modalCliente">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">👤</span><div class="modal-title">Novo Cliente</div><button class="modal-close" onclick="closeModal('modalCliente')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-section">Dados Pessoais</div>
+        <div class="form-group form-full"><label>Nome completo *</label><input id="c-nome" placeholder="Ex: Ana Paula Silva"></div>
+        <div class="form-group"><label>WhatsApp</label><input id="c-whats" placeholder="(85) 99999-9999"></div>
+        <div class="form-group"><label>Instagram</label><input id="c-insta" placeholder="@usuario"></div>
+        <div class="form-group"><label>Cidade / Bairro</label><input id="c-cidade" placeholder="Fortaleza - Aldeota"></div>
+        <div class="form-group"><label>Como chegou</label><select id="c-origem"><option>Instagram</option><option>Indicação</option><option>WhatsApp</option><option>Tráfego pago</option><option>Outro</option></select></div>
+        <div class="form-section">Perfil de Compra</div>
+        <div class="form-group"><label>Tipo</label><select id="c-tipo"><option value="personalizado">Personalizado</option><option value="empreendedor">Empreendedor</option></select></div>
+        <div class="form-group"><label>Preferências</label><input id="c-pref" placeholder="Ex: camisetas, brindes corporativos"></div>
+        <div class="form-group"><label>Pagamento</label><select id="c-pgto"><option>Pix</option><option>Cartão</option><option>Dinheiro</option><option>Parcelado</option></select></div>
+        <div class="form-group"><label>Aniversário</label><input id="c-aniv" placeholder="dd/mm"></div>
+        <div class="form-group form-full"><label>Observações</label><textarea id="c-obs" placeholder="Observações importantes..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCliente')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCliente()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTRAR VENDA (modal unificado: cliente novo ou existente) -->
+<div class="modal-backdrop" id="modalCompra">
+  <div class="modal modal-lg">
+    <div class="modal-header"><span style="font-size:18px">🛒</span><div class="modal-title">Registrar Venda</div><button class="modal-close" onclick="closeModal('modalCompra')">×</button></div>
+    <div class="modal-body">
+
+      <!-- STEP 1: Escolher cliente -->
+      <div id="vendaStep1">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">1. Quem é o cliente?</div>
+        <!-- Busca -->
+        <div style="position:relative;margin-bottom:10px">
+          <input id="cp-busca" type="text" placeholder="🔍 Digite o nome para buscar ou cadastrar novo..." autocomplete="off"
+            style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;outline:none;background:var(--bg);"
+            oninput="filtrarClientesVenda(this.value)" onfocus="filtrarClientesVenda(this.value)">
+          <div id="cp-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-lg);z-index:50;max-height:220px;overflow-y:auto;margin-top:4px"></div>
+        </div>
+        <!-- Cliente selecionado -->
+        <div id="cp-selecionado" style="display:none;background:var(--green-bg);border:1px solid var(--green);border-radius:8px;padding:10px 14px;display:none;align-items:center;gap:10px;margin-bottom:10px">
+          <span style="font-size:20px">✅</span>
+          <div style="flex:1"><div id="cp-sel-nome" style="font-weight:700;font-size:13px"></div><div id="cp-sel-info" style="font-size:11px;color:var(--green)"></div></div>
+          <button onclick="limparClienteVenda()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px">×</button>
+        </div>
+        <!-- Cadastrar novo (aparece quando não encontra) -->
+        <div id="cp-novo-bloco" style="display:none">
+          <div style="background:var(--al);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--accent);margin-bottom:12px">
+            👤 Cliente novo — preencha os dados abaixo para cadastrar junto com a venda
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label>WhatsApp</label><input id="cp-novo-whats" placeholder="(85) 99999-9999"></div>
+            <div class="form-group"><label>Tipo</label><select id="cp-novo-tipo"><option value="personalizado">Personalizado</option><option value="empreendedor">Empreendedor</option></select></div>
+            <div class="form-group"><label>Como chegou</label><select id="cp-novo-origem"><option>Instagram</option><option>Indicação</option><option>WhatsApp</option><option>Tráfego pago</option><option>Outro</option></select></div>
+            <div class="form-group"><label>Preferências</label><input id="cp-novo-pref" placeholder="Ex: camisetas, brindes"></div>
+          </div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0">
+
+      <!-- STEP 2: Dados da venda -->
+      <div>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px">2. Dados da venda</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Data</label><input id="cp-data" type="date"></div>
+          <div class="form-group"><label>Canal</label><select id="cp-canal"><option>WhatsApp</option><option>Instagram</option><option>Loja física</option><option>Site</option></select></div>
+          <div class="form-group form-full">
+            <label>Produto(s) SKU vendido(s)</label>
+            <div id="cp-skus-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+            <div style="display:flex;gap:8px">
+              <select id="cp-sku-sel" style="flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;">
+                <option value="">+ Selecionar produto do catálogo</option>
+              </select>
+              <input id="cp-sku-qtd" type="number" placeholder="Qtd" min="1" value="1" style="width:70px;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="adicionarSkuVenda()">+ Add</button>
+            </div>
+            <div style="margin-top:6px"><label style="font-size:11px;font-weight:600;color:var(--muted)">Ou descreva livremente</label><textarea id="cp-produtos" placeholder="Ex: produto personalizado não cadastrado, detalhes extras..." style="margin-top:4px;min-height:50px"></textarea></div>
+          </div>
+          <div class="form-group"><label>Valor total (R$) *</label><input id="cp-valor" type="number" placeholder="0.00"></div>
+          <div class="form-group"><label>Status</label><select id="cp-status"><option value="finalizada">Finalizada e paga</option><option value="aguardando">Aguardando pagamento</option><option value="abandonado">Carrinho abandonado</option></select></div>
+          <div class="form-group form-full"><label>Observações</label><textarea id="cp-obs" placeholder="O que o cliente comentou, pediu..."></textarea></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCompra')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCompra()">Registrar venda</button>
+    </div>
+  </div>
+</div>
+
+<!-- LANÇAMENTO FINANCEIRO (a pagar / a receber) -->
+<div class="modal-backdrop" id="modalLancamento">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px" id="lancIcone">💰</span><div class="modal-title" id="lancTitulo">Novo Lançamento</div><button class="modal-close" onclick="closeModal('modalLancamento')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Descrição *</label><input id="lanc-desc" placeholder="Ex: Fornecedor gráfica, Mensalidade sistema..."></div>
+        <div class="form-group"><label>Valor (R$) *</label><input id="lanc-valor" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Vencimento *</label><input id="lanc-venc" type="date"></div>
+        <div class="form-group"><label>Categoria</label><select id="lanc-cat">
+          <option>Fornecedor</option><option>Aluguel</option><option>Energia</option><option>Internet</option><option>Marketing</option><option>Impostos</option><option>Salário</option><option>Pró-labore</option><option>Matéria-prima</option><option>Cliente</option><option>Serviço prestado</option><option>Outro</option>
+        </select></div>
+        <div class="form-group"><label>Recorrência</label><select id="lanc-rec"><option value="unica">Única</option><option value="mensal">Mensal</option><option value="quinzenal">Quinzenal</option></select></div>
+        <div class="form-group"><label>NF / Documento</label><input id="lanc-nf" placeholder="Nº NF ou documento"></div>
+        <div class="form-group form-full"><label>Observação</label><input id="lanc-obs" placeholder="Observação opcional..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalLancamento')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvLanc" onclick="salvarLancamento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CUSTOS MENSAIS -->
+<div class="modal-backdrop" id="modalCustos">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">💸</span><div class="modal-title">Custos Mensais Fixos</div><button class="modal-close" onclick="closeModal('modalCustos')">×</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:12px">Informe seus custos fixos mensais para calcular o lucro real.</div>
+      <div id="custoList" style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px"></div>
+      <button class="btn btn-ghost btn-sm" style="width:100%" onclick="addCustoRow()">+ Adicionar custo</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCustos')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCustos()">Salvar custos</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOVO CUSTO ITEM -->
+<div class="modal-backdrop" id="modalCustoItem">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">📐</span><div class="modal-title">Cadastrar Custo / Despesa</div><button class="modal-close" onclick="closeModal('modalCustoItem')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Nome do custo *</label><input id="ci-nome" placeholder="Ex: Aluguel, Energia, Matéria-prima"></div>
+        <div class="form-group"><label>Valor mensal (R$)</label><input id="ci-valor" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Tipo</label><select id="ci-tipo"><option value="fixo">Fixo</option><option value="variavel">Variável</option></select></div>
+        <div class="form-group"><label>Categoria</label><select id="ci-cat"><option>Estrutura</option><option>Matéria-prima</option><option>Marketing</option><option>Pessoal</option><option>Impostos</option><option>Operacional</option><option>Outro</option></select></div>
+        <div class="form-group form-full"><label>Observação</label><input id="ci-obs" placeholder="Detalhes opcionais..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCustoItem')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarCustoItem()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOLHA -->
+<div class="modal-backdrop" id="modalFolha">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">👥</span><div class="modal-title">Lançar Folha / Pró-labore</div><button class="modal-close" onclick="closeModal('modalFolha')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Mês de referência</label><input id="fol-mes" type="month"></div>
+        <div class="form-group"><label>Tipo</label><select id="fol-tipo"><option value="prolabore">Pró-labore (sócio)</option><option value="salario">Salário (funcionário)</option><option value="provisao">Provisão (13º/férias)</option></select></div>
+        <div class="form-group form-full"><label>Nome / Identificação</label><input id="fol-nome" placeholder="Ex: Sócio 1 – Ana, Funcionário João"></div>
+        <div class="form-group"><label>Valor bruto (R$)</label><input id="fol-bruto" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Encargos / Descontos (R$)</label><input id="fol-enc" type="number" placeholder="0.00"></div>
+        <div class="form-group form-full"><label>Observação</label><input id="fol-obs" placeholder="Observações opcionais..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalFolha')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFolha()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SKU -->
+<div class="modal-backdrop" id="modalSKU">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">🏷️</span><div class="modal-title" id="skuModalTitle">Novo Produto</div><button class="modal-close" onclick="closeModal('modalSKU')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Nome do produto *</label><input id="sku-nome" placeholder="Ex: Camiseta Dry Fit 100% Poliéster"></div>
+        <div class="form-group"><label>Código SKU <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><input id="sku-cod" placeholder="Ex: CAM-001"></div>
+        <div class="form-group"><label>Categoria</label>
+          <select id="sku-cat" style="padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;">
+            <option value="">Selecione...</option>
+            <option value="Personalizados">🎨 Personalizados</option>
+            <option value="Empreendedores">🏪 Empreendedores</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Valor de venda (R$)</label><input id="sku-preco" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Unidade</label><select id="sku-un"><option>unidade</option><option>m²</option><option>kit</option><option>caixa</option></select></div>
+        <div class="form-group form-full"><label>Descrição / Especificação <span style="font-weight:400;color:var(--muted)">(opcional)</span></label><textarea id="sku-desc" placeholder="Gramatura, dimensões, acabamento, cores disponíveis..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalSKU')">Cancelar</button>
+      <button class="btn btn-primary" id="btnSalvSKU" onclick="salvarSKU()">Salvar produto</button>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORIAS SKU -->
+<div class="modal-backdrop" id="modalCatSKU">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">⚙️</span><div class="modal-title">Gerenciar Categorias</div><button class="modal-close" onclick="closeModal('modalCatSKU')">×</button></div>
+    <div class="modal-body">
+      <div id="catSKUList" style="display:flex;flex-direction:column;gap:7px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input id="novaCatInput" placeholder="Nova categoria..." style="flex:1;padding:8px 11px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;" onkeydown="if(event.key==='Enter')adicionarCategoria()">
+        <button class="btn btn-primary btn-sm" onclick="adicionarCategoria()">+ Adicionar</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCatSKU')">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarCategorias()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTÓRICO CLIENTE -->
+<div class="modal-backdrop" id="modalHistorico">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">📁</span><div class="modal-title">Adicionar Cliente Histórico</div><button class="modal-close" onclick="closeModal('modalHistorico')">×</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info">Clientes históricos são cadastros antigos para manter controle completo da carteira.</div>
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Nome *</label><input id="h-nome" placeholder="Nome do cliente"></div>
+        <div class="form-group"><label>WhatsApp</label><input id="h-whats" placeholder="(85) 99999-9999"></div>
+        <div class="form-group"><label>Tipo</label><select id="h-tipo"><option value="personalizado">Personalizado</option><option value="empreendedor">Empreendedor</option></select></div>
+        <div class="form-group"><label>Período aproximado</label><input id="h-periodo" placeholder="Ex: Jan 2022 – Jun 2023"></div>
+        <div class="form-group"><label>Total gasto estimado (R$)</label><input id="h-total" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Motivo inatividade</label><select id="h-motivo"><option>Mudou de cidade</option><option>Parou de comprar</option><option>Concorrência</option><option>Situação financeira</option><option>Não sei</option><option>Outro</option></select></div>
+        <div class="form-group form-full"><label>Observações</label><textarea id="h-obs" placeholder="Contexto importante..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalHistorico')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarHistorico()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOV CAIXA HISTÓRICO -->
+<div class="modal-backdrop" id="modalMovCaixa">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">🗄️</span><div class="modal-title">Lançar Movimento de Caixa Histórico</div><button class="modal-close" onclick="closeModal('modalMovCaixa')">×</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Data *</label><input id="mov-data" type="date"></div>
+        <div class="form-group"><label>Tipo *</label><select id="mov-tipo"><option value="entrada">Entrada</option><option value="saida">Saída</option></select></div>
+        <div class="form-group form-full"><label>Descrição *</label><input id="mov-desc" placeholder="Ex: Venda lote camisetas, Pagamento fornecedor..."></div>
+        <div class="form-group"><label>Valor (R$) *</label><input id="mov-valor" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Categoria</label><select id="mov-cat"><option>Vendas</option><option>Serviços</option><option>Fornecedor</option><option>Aluguel</option><option>Folha</option><option>Impostos</option><option>Marketing</option><option>Outro</option></select></div>
+        <div class="form-group form-full"><label>Observação</label><input id="mov-obs" placeholder="Observação opcional..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalMovCaixa')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarMovCaixa()">Salvar movimento</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalDREManual">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">📑</span><div class="modal-title">Lançar DRE Manual</div><button class="modal-close" onclick="closeModal('modalDREManual')">×</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:14px">Use para lançar meses anteriores ou ajustar valores manualmente.</div>
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Mês / Ano de referência *</label><input id="drem-mes" type="month"></div>
+        <div class="form-group form-full"><label>Meta do mês (R$)</label><input id="drem-meta" type="number" placeholder="Ex: 15000.00"></div>
+        <div class="form-section">Receitas</div>
+        <div class="form-group form-full"><label>Receita Bruta (faturamento total) *</label><input id="drem-receita" type="number" placeholder="0.00"></div>
+        <div class="form-section">Custos e Despesas</div>
+        <div class="form-group"><label>Custo dos Produtos (CPV / matéria-prima)</label><input id="drem-cpv" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Despesas Operacionais</label><input id="drem-op" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Despesas Administrativas</label><input id="drem-adm" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Folha / Pró-labore</label><input id="drem-folha" type="number" placeholder="0.00"></div>
+        <div class="form-group form-full"><label>Observações</label><input id="drem-obs" placeholder="Contexto do mês..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalDREManual')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarDREManual()">Salvar DRE</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalPerfil">
+  <div class="modal modal-lg">
+    <div class="modal-header"><span style="font-size:18px">👤</span><div class="modal-title" id="perfilNome">Perfil</div><button class="modal-close" onclick="closeModal('modalPerfil')">×</button></div>
+    <div class="modal-body" id="perfilBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalPerfil')">Fechar</button>
+      <button class="btn btn-primary" id="btnAbordagem" onclick="pedirAbordagem()">💬 Sugestão de abordagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="modal-backdrop" id="modalImport">
+  <div class="modal modal-lg">
+    <div class="modal-header"><span style="font-size:18px">📥</span><div class="modal-title">Importar Planilha de Clientes</div><button class="modal-close" onclick="closeModal('modalImport')">×</button></div>
+    <div class="modal-body"><div id="importPreview"></div><div id="importMapping" style="display:none"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">Mapeie as colunas</div><div id="mappingFields" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div><div class="alert alert-warn" style="margin-top:12px">⚠️ Clientes com mesmo nome serão ignorados para evitar duplicatas.</div></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalImport')">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmImport" style="display:none" onclick="confirmarImport()">✅ Importar clientes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LANÇAR RELATÓRIO MANUAL -->
+<div class="modal-backdrop" id="modalRelManual">
+  <div class="modal">
+    <div class="modal-header"><span style="font-size:18px">📊</span><div class="modal-title">Lançar Relatório Manual</div><button class="modal-close" onclick="closeModal('modalRelManual')">×</button></div>
+    <div class="modal-body">
+      <div class="alert alert-info" style="margin-bottom:14px">Use para lançar dados de meses e anos anteriores.</div>
+      <div class="form-grid">
+        <div class="form-group form-full"><label>Mês / Ano de referência *</label><input id="relm-mes" type="month"></div>
+        <div class="form-group form-full"><label>Meta do mês (R$)</label><input id="relm-meta" type="number" placeholder="Ex: 15000.00"></div>
+        <div class="form-group"><label>Faturamento (R$) *</label><input id="relm-fat" type="number" placeholder="0.00"></div>
+        <div class="form-group"><label>Quantidade de vendas</label><input id="relm-vendas" type="number" placeholder="0"></div>
+        <div class="form-group form-full"><label>Observações</label><input id="relm-obs" placeholder="Contexto do período, eventos, campanhas..."></div>
+      </div>
+      <div id="relm-preview" style="margin-top:14px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalRelManual')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarRelManual()">Salvar relatório</button>
+    </div>
+  </div>
+</div>
+
+<!-- RELATÓRIO PREVIEW -->
+<div class="modal-backdrop" id="modalRelatorio">
+  <div class="modal modal-xl">
+    <div class="modal-header"><span style="font-size:18px">📊</span><div class="modal-title" id="relTitulo">Relatório</div><button class="modal-close" onclick="closeModal('modalRelatorio')">×</button></div>
+    <div class="modal-body" id="relBody" style="line-height:1.8"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalRelatorio')">Fechar</button>
+      <button class="btn btn-green" onclick="exportRelatorio()">📥 Exportar Excel</button>
+      <button class="btn btn-primary" onclick="exportRelatorioPDF()">📄 Exportar PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- Supabase -->
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Firebase Config ──────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyByPDdkms28d0OLZVMBLd8G-sRyc7dC7p0",
+  authDomain: "buscaprint-d6b32.firebaseapp.com",
+  projectId: "buscaprint-d6b32",
+  storageBucket: "buscaprint-d6b32.firebasestorage.app",
+  messagingSenderId: "914269872356",
+  appId: "1:914269872356:web:db28f11ad9b54765448cf1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── CRUD helpers ──────────────────────────────────────────────
+async function dbGet(table){
+  const snap = await db.collection(table).orderBy('criado_em','desc').get();
+  return snap.docs.map(d=>({id:d.id,...d.data()}));
+}
+async function dbInsert(table, obj){
+  const newObj = {...obj, id:obj.id||crypto.randomUUID(), criado_em:new Date().toISOString()};
+  try{
+    await db.collection(table).doc(newObj.id).set(newObj);
+    return newObj;
+  }catch(e){
+    console.warn('dbInsert offline, saving locally:',table,e.message);
+    const key='cache_'+table;
+    const list=JSON.parse(localStorage.getItem(key)||'[]');
+    list.unshift(newObj);
+    localStorage.setItem(key,JSON.stringify(list));
+    if(table==='clientes')window.clientes=[newObj,...(window.clientes||[])];
+    else if(table==='historicos')window.historicos=[newObj,...(window.historicos||[])];
+    else if(table==='lancamentos')window.lancamentos=[newObj,...(window.lancamentos||[])];
+    else if(table==='skus')window.skus=[newObj,...(window.skus||[])];
+    else if(table==='mov_caixa')window.movCaixa=[newObj,...(window.movCaixa||[])];
+    else if(table==='custo_items')window.custoItems=[newObj,...(window.custoItems||[])];
+    return newObj;
+  }
+}
+async function dbUpdate(table, id, obj){
+  try{
+    await db.collection(table).doc(id).update(obj);
+  }catch(e){
+    console.warn('dbUpdate offline:',table,id,e.message);
+    const key='cache_'+table;
+    const list=JSON.parse(localStorage.getItem(key)||'[]');
+    const idx=list.findIndex(x=>x.id===id);
+    if(idx>=0){list[idx]={...list[idx],...obj};localStorage.setItem(key,JSON.stringify(list));}
+    ['clientes','historicos','lancamentos','skus','movCaixa','custoItems'].forEach(k=>{
+      if(window[k]){const i=window[k].findIndex(x=>x.id===id);if(i>=0)window[k][i]={...window[k][i],...obj};}
+    });
+  }
+}
+async function dbDelete(table, id){
+  try{
+    await db.collection(table).doc(id).delete();
+  }catch(e){
+    console.warn('dbDelete offline:',table,id,e.message);
+    const key='cache_'+table;
+    const list=JSON.parse(localStorage.getItem(key)||'[]').filter(x=>x.id!==id);
+    localStorage.setItem(key,JSON.stringify(list));
+  }
+}
+async function dbUpsertConfig(key, value){
+  try{
+    await db.collection('config').doc(key).set({key,value});
+  }catch(e){console.error('dbUpsertConfig',e);}
+}
+async function dbGetConfig(key){
+  try{
+    const doc = await db.collection('config').doc(key).get();
+    return doc.exists ? doc.data().value : null;
+  }catch(e){return null;}
+}
+
+function setSyncStatus(status, msg){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncText');
+  if(dot)dot.className='sync-dot'+(status==='err'?' offline':'');
+  if(txt)txt.textContent=msg||(status==='ok'?'sincronizado':status==='loading'?'conectando...':'erro de conexão');
+}
+
+function loadFromCache(){
+  // Carrega dados do localStorage como fallback/cache
+  try{
+    window.clientes=(JSON.parse(localStorage.getItem('cache_clientes')||'[]')).map(r=>({...r,compras:r.compras||[]}));
+    window.historicos=JSON.parse(localStorage.getItem('cache_historicos')||'[]');
+    window.lancamentos=JSON.parse(localStorage.getItem('cache_lancamentos')||'[]');
+    window.skus=JSON.parse(localStorage.getItem('cache_skus')||'[]');
+    window.folhaList=JSON.parse(localStorage.getItem('cache_folha')||'[]');
+    window.movCaixa=JSON.parse(localStorage.getItem('cache_movcaixa')||'[]');
+    window.custoItems=JSON.parse(localStorage.getItem('cache_custoitems')||'[]');
+    window.custos=JSON.parse(localStorage.getItem('cache_custos')||'[]');
+  }catch(e){
+    window.clientes=[];window.historicos=[];window.lancamentos=[];
+    window.skus=[];window.folhaList=[];window.movCaixa=[];
+    window.custoItems=[];window.custos=[];
+  }
+}
+
+function saveToCache(){
+  try{
+    localStorage.setItem('cache_clientes',JSON.stringify(window.clientes));
+    localStorage.setItem('cache_historicos',JSON.stringify(window.historicos));
+    localStorage.setItem('cache_lancamentos',JSON.stringify(window.lancamentos));
+    localStorage.setItem('cache_skus',JSON.stringify(window.skus));
+    localStorage.setItem('cache_folha',JSON.stringify(window.folhaList));
+    localStorage.setItem('cache_movcaixa',JSON.stringify(window.movCaixa));
+    localStorage.setItem('cache_custoitems',JSON.stringify(window.custoItems));
+    localStorage.setItem('cache_custos',JSON.stringify(window.custos));
+  }catch(e){}
+}
+
+// ── Load all data ─────────────────────────────────────────────
+async function loadAll(){
+  setSyncStatus('loading');
+  try{
+    const[cl,hi,la,sk,fo,mv,ci,cfg]=await Promise.all([
+      dbGet('clientes'),dbGet('historicos'),dbGet('lancamentos'),
+      dbGet('skus'),dbGet('folha'),dbGet('mov_caixa'),dbGet('custo_items'),
+      dbGetConfig('custos')
+    ]);
+    window.clientes=cl.map(r=>({...r,compras:r.compras||[]}));
+    window.historicos=hi;window.lancamentos=la;window.skus=sk;
+    window.folhaList=fo;window.movCaixa=mv;window.custoItems=ci;
+    window.custos=cfg||[];
+    saveToCache();
+    setSyncStatus('ok');
+    try{document.getElementById('badge-hist').textContent=window.historicos.length;}catch(e){}
+    try{document.getElementById('st-skus').textContent=window.skus.length;}catch(e){}
+    window.renderAll();
+    setupRealtime();
+  }catch(e){
+    console.error('loadAll error:',e);
+    setSyncStatus('err','erro — usando cache local');
+  }
+}
+
+function setupRealtime(){
+  db.collection('clientes').onSnapshot(()=>reloadTable('clientes'));
+  db.collection('lancamentos').onSnapshot(()=>reloadTable('lancamentos'));
+  db.collection('skus').onSnapshot(()=>reloadTable('skus'));
+}
+
+async function reloadTable(t){
+  try{
+    const data=await dbGet(t);
+    if(t==='clientes'){window.clientes=data.map(r=>({...r,compras:r.compras||[]}));}
+    else if(t==='historicos'){window.historicos=data;try{document.getElementById('badge-hist').textContent=data.length;}catch(e){}}
+    else if(t==='lancamentos'){window.lancamentos=data;renderCaixaDash();}
+    else if(t==='skus'){window.skus=data;try{document.getElementById('st-skus').textContent=data.length;}catch(e){}}
+    else if(t==='folha'){window.folhaList=data;}
+    else if(t==='mov_caixa'){window.movCaixa=data;}
+    else if(t==='custo_items'){window.custoItems=data;}
+    setSyncStatus('ok');
+    saveToCache();
+    window.renderAll();
+  }catch(e){
+    console.error('reloadTable error:',t,e);
+    setSyncStatus('err','erro ao recarregar');
+  }
+}
+
+// init movido para o final do segundo script
+
+// ═══ STATE ═══
+let currentClienteId=null,gestorHistory=[],crmHistory=[],gestorLoading=false,crmLoading=false;
+let gestorInited=false,crmInited=false,currentResPeriod='quinzenal';
+let chartFatInst=null,chartLucroInst=null,chartCaixaInst=null,dashChartInst=null;
+let currentLancTipo='pagar',currentSKUId=null,currentRelData=null;
+
+// ═══ STATUS ═══
+function calcStatus(c){
+  if(c.tipo==='empreendedor')return'revendedora';
+  if(!c.compras||!c.compras.length)return'novo';
+  if(c.compras.some(p=>p.status==='abandonado'))return'abandonado';
+  const ds=c.compras.filter(p=>p.status==='finalizada'||p.status==='aguardando').map(p=>new Date(p.data));
+  if(!ds.length)return'abandonado';
+  const days=Math.floor((Date.now()-Math.max(...ds))/86400000);
+  if(days<15)return'recente';if(days<30)return'ativo';if(days<60)return'morno';if(days<90)return'esfriando';return'inativo';
+}
+const SI={recente:{label:'🟢 Ativo Recente',cls:'s-recente',acao:'Pós-venda'},ativo:{label:'🔵 Ativo',cls:'s-ativo',acao:'Remarketing leve'},morno:{label:'🟡 Morno',cls:'s-morno',acao:'Oferta especial'},esfriando:{label:'🟠 Esfriando',cls:'s-esfriando',acao:'Reativar'},inativo:{label:'🔴 Inativo',cls:'s-inativo',acao:'Campanha resgate'},abandonado:{label:'⚫ Abandonado',cls:'s-abandonado',acao:'Follow-up urgente'},revendedora:{label:'🔁 Empreendedor',cls:'s-revendedora',acao:'Relacionamento VIP'},novo:{label:'🆕 Novo',cls:'s-recente',acao:'Apresentar produtos'}};
+function getTotal(c){return(c.compras||[]).filter(p=>p.status==='finalizada').reduce((a,p)=>a+(parseFloat(p.valor)||0),0);}
+function getDays(c){const ds=(c.compras||[]).filter(p=>p.status==='finalizada'||p.status==='aguardando').map(p=>new Date(p.data));if(!ds.length)return null;return Math.floor((Date.now()-Math.max(...ds))/86400000);}
+function fmt(v){return'R$'+(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function fmtP(v){return((parseFloat(v)||0).toFixed(1))+'%';}
+
+// ═══ MONTHLY DATA ═══
+function getMonthlyData(){
+  const map={};
+  clientes.forEach(c=>{(c.compras||[]).filter(p=>p.status==='finalizada').forEach(p=>{const d=new Date(p.data);const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;if(!map[k])map[k]={fat:0,vendas:0,clientes:new Set()};map[k].fat+=parseFloat(p.valor)||0;map[k].vendas++;map[k].clientes.add(c.id);});});
+  return Object.entries(map).sort((a,b)=>a[0].localeCompare(b[0])).map(([k,v])=>({key:k,label:new Date(k+'-15').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}),fat:v.fat,vendas:v.vendas,clientes:v.clientes.size,ticket:v.vendas?v.fat/v.vendas:0}));
+}
+function getCustoMensal(){return(window.custos||[]).reduce((a,c)=>a+(parseFloat(c.valor)||0),0)+(window.custoItems||[]).filter(c=>c.tipo==='fixo').reduce((a,c)=>a+(parseFloat(c.valor)||0),0)+(window.folhaList||[]).filter(f=>f.mes===curMonthKey()).reduce((a,f)=>a+(parseFloat(f.bruto)||0),0);}
+function curMonthKey(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;}
+
+// ═══ RENDER ALL ═══
+window.renderAll=function(){
+  updateBadges();
+  const av=document.querySelector('.view.active');
+  if(av)renderView(av.id.replace('view-',''));
+  populateClienteSelect();renderDREmesSelect();
+};
+
+function updateBadges(){
+  document.getElementById('badge-abandonados').textContent=clientes.filter(c=>calcStatus(c)==='abandonado').length;
+  document.getElementById('badge-inativos').textContent=clientes.filter(c=>calcStatus(c)==='inativo').length;
+  document.getElementById('badge-reativacao').textContent=clientes.filter(c=>calcStatus(c)==='esfriando').length;
+  document.getElementById('badge-agenda').textContent=clientes.filter(c=>['abandonado','recente','morno'].includes(calcStatus(c))).length;
+}
+
+// ═══ VIEWS ═══
+function showView(id,el){
+  document.querySelectorAll('.view').forEach(v=>{v.classList.remove('active');v.style.display='';});
+  document.querySelectorAll('.chat-wrap').forEach(c=>{c.classList.remove('chat-active');c.style.display='';});
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(id==='gestor'||id==='crm'){
+    const w=document.getElementById('view-'+id);w.style.display='flex';w.classList.add('chat-active');
+    if(id==='gestor'&&!gestorInited){gestorInited=true;initGestor();}
+    if(id==='crm'&&!crmInited){crmInited=true;initCrm();}
+  }else{
+    document.getElementById('view-'+id).classList.add('active');renderView(id);
+  }
+}
+function renderView(id){
+  if(id==='dashboard')renderDashboard();
+  else if(id==='fin-resumo')renderFinResumo();
+  else if(id==='fin-caixa')renderCaixa();
+  else if(id==='fin-dre')renderDRE();
+  else if(id==='fin-custos')renderCustosView();
+  else if(id==='fin-folha')renderFolhaView();
+  else if(id==='fin-metricas')renderMetricas();
+  else if(id==='fin-relatorios')renderRelatorios();
+  else if(id==='fin-historico')renderHistoricoFin();
+  else if(id==='skus')renderSKUs();
+  else if(id==='clientes')renderClientesList();
+  else if(id==='historicos')renderHistoricos();
+  else if(id==='agenda')renderAgenda();
+  else if(id==='abandonados')renderFunil('abandonados','abandonado');
+  else if(id==='inativos')renderFunil('inativos','inativo');
+  else if(id==='reativacao')renderFunil('reativacao','esfriando');
+}
+
+// ═══ DASHBOARD ═══
+function renderDashboard(){
+  const monthly=getMonthlyData();
+  const curKey=curMonthKey();
+  const cur=monthly.find(m=>m.key===curKey)||{fat:0,vendas:0,clientes:0,ticket:0,key:curKey};
+  const prevKey=(()=>{const d=new Date();d.setMonth(d.getMonth()-1);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;})();
+  const prev=monthly.find(m=>m.key===prevKey)||{fat:0};
+  const custoMes=getCustoMensal();const lucro=cur.fat-custoMes;const lucroPrev=(prev.fat||0)-custoMes;
+  const d=(v,p)=>{if(!p)return'—';const pct=((v-p)/p*100).toFixed(0);return`<span class="${pct>=0?'up':'down'}">${pct>=0?'▲':'▼'} ${Math.abs(pct)}% vs ant.</span>`;};
+  document.getElementById('st-total').textContent=clientes.length;
+  document.getElementById('st-fat').textContent=fmt(cur.fat);document.getElementById('st-fat-delta').innerHTML=d(cur.fat,prev.fat);
+  document.getElementById('st-lucro').textContent=fmt(lucro);document.getElementById('st-lucro').style.color=lucro>=0?'var(--green)':'var(--red)';document.getElementById('st-lucro-delta').innerHTML=d(lucro,lucroPrev);
+  document.getElementById('st-acao').textContent=clientes.filter(c=>['abandonado','recente','morno','esfriando'].includes(calcStatus(c))).length;
+  document.getElementById('st-ticket').textContent=fmt(cur.ticket);
+  const receber=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const pagar=(lancamentos||[]).filter(l=>l.tipo==='pagar'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  document.getElementById('st-receber').textContent=fmt(receber);document.getElementById('st-pagar').textContent=fmt(pagar);
+  // Vencimentos 7 dias
+  const hoje=new Date();const em7=new Date(hoje);em7.setDate(em7.getDate()+7);
+  const venc=(lancamentos||[]).filter(l=>l.status!=='pago'&&new Date(l.venc)<=em7).sort((a,b)=>new Date(a.venc)-new Date(b.venc)).slice(0,5);
+  document.getElementById('dash-venc').innerHTML=!venc.length?'<div class="empty" style="padding:20px"><div style="font-size:24px">✅</div><div style="font-size:12px">Nenhum vencimento próximo</div></div>':
+    '<table><thead><tr><th>Descrição</th><th>Tipo</th><th>Vencimento</th><th>Valor</th></tr></thead><tbody>'+venc.map(l=>{const d=new Date(l.venc);const dif=Math.ceil((d-hoje)/86400000);const bk=dif<0?'var(--red-bg)':dif===0?'var(--yellow-bg)':'';return`<tr style="background:${bk}"><td style="font-weight:600">${l.descricao}</td><td><span class="badge ${l.tipo==='pagar'?'badge-venc':'badge-ok'}">${l.tipo==='pagar'?'Pagar':'Receber'}</span></td><td style="font-size:11px">${d.toLocaleDateString('pt-BR')} ${dif<0?'(vencido)':dif===0?'(hoje)':''}</td><td style="font-weight:700;color:${l.tipo==='pagar'?'var(--red)':'var(--green)'}">${fmt(l.valor)}</td></tr>`;}).join('')+'</tbody></table>';
+  // CRM urgentes
+  const urg=clientes.filter(c=>['abandonado','esfriando'].includes(calcStatus(c))).slice(0,4);
+  document.getElementById('dash-crm-urg').innerHTML=!urg.length?'<div class="empty" style="padding:20px"><div style="font-size:24px">🎉</div><div style="font-size:12px">Nenhuma ação urgente</div></div>':
+    '<table><tbody>'+urg.map(c=>{const s=calcStatus(c);return`<tr><td style="font-weight:600">${c.nome}</td><td><span class="status ${SI[s].cls}">${SI[s].label}</span></td><td style="font-size:11px;color:var(--muted)">${getDays(c)||'—'}d</td><td><button class="btn btn-ghost btn-xs" onclick="verPerfil('${c.id}')">Ver</button></td></tr>`;}).join('')+'</tbody></table>';
+  // Dash chart
+  if(dashChartInst)dashChartInst.destroy();
+  const last6=monthly.slice(-6);
+  dashChartInst=new Chart(document.getElementById('dashChart').getContext('2d'),{type:'bar',data:{labels:last6.map(m=>m.label),datasets:[{label:'Faturamento',data:last6.map(m=>m.fat),backgroundColor:'rgba(200,118,58,.7)',borderRadius:5},{label:'Lucro',data:last6.map(m=>m.fat-custoMes),backgroundColor:last6.map(m=>(m.fat-custoMes)>=0?'rgba(45,122,79,.6)':'rgba(192,57,43,.6)'),borderRadius:5}]},options:{plugins:{legend:{position:'bottom'}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+
+  // ── Produtos por categoria no dashboard ──
+  const todos=window.skus||[];
+  const persCat=todos.filter(s=>s.cat==='Personalizados');
+  const empCat=todos.filter(s=>s.cat==='Empreendedores');
+  const persV=persCat.reduce((a,s)=>a+(parseInt(s.total_vendas)||0),0);
+  const empV=empCat.reduce((a,s)=>a+(parseInt(s.total_vendas)||0),0);
+  const totalV=persV+empV;
+  const catEl=document.getElementById('dashProdCat');
+  if(catEl){
+    if(!totalV){catEl.innerHTML='<div style="color:var(--muted);font-size:12px">Nenhuma venda com SKU registrada ainda.</div>';}
+    else{catEl.innerHTML=`
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:700">🎨 Personalizados</span><span>${persV} vendas</span></div>
+        <div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden"><div style="width:${totalV?Math.round(persV/totalV*100):0}%;height:100%;background:var(--purple);border-radius:5px"></div></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${totalV?Math.round(persV/totalV*100):0}% das vendas</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="font-weight:700">🏪 Empreendedores</span><span>${empV} vendas</span></div>
+        <div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden"><div style="width:${totalV?Math.round(empV/totalV*100):0}%;height:100%;background:var(--orange);border-radius:5px"></div></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${totalV?Math.round(empV/totalV*100):0}% das vendas</div>
+      </div>`;}
+  }
+  const topEl=document.getElementById('dashTopProd');
+  if(topEl){
+    const topProd=[...todos].filter(s=>parseInt(s.total_vendas||0)>0).sort((a,b)=>(parseInt(b.total_vendas)||0)-(parseInt(a.total_vendas)||0)).slice(0,5);
+    topEl.innerHTML=topProd.length?'<table><thead><tr><th>Produto</th><th>Categoria</th><th>Vendas</th></tr></thead><tbody>'+topProd.map(s=>`<tr><td style="font-weight:600">${s.nome}</td><td style="font-size:11px">${s.cat||'—'}</td><td style="font-weight:700;color:var(--accent)">${s.total_vendas||0}</td></tr>`).join('')+'</tbody></table>':'<div style="padding:14px;color:var(--muted);font-size:12px">Sem produtos com vendas registradas.</div>';
+  }
+}
+
+// ═══ FINANCEIRO RESUMO ═══
+function setResPeriod(p,el){currentResPeriod=p;document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderFinResumo();}
+function renderFinResumo(){
+  const monthly=getMonthlyData();const custoMes=getCustoMensal();
+  let labels=[],fatD=[],lucroD=[],custoD=[];
+  if(currentResPeriod==='quinzenal'){const l=monthly.slice(-4);labels=l.map(m=>m.label);fatD=l.map(m=>m.fat);custoD=l.map(m=>custoMes/2);lucroD=l.map(m=>m.fat-custoMes/2);}
+  else if(currentResPeriod==='mensal'){const l=monthly.slice(-6);labels=l.map(m=>m.label);fatD=l.map(m=>m.fat);custoD=l.map(m=>custoMes);lucroD=l.map(m=>m.fat-custoMes);}
+  else if(currentResPeriod==='trimestral'){const q={};monthly.forEach(m=>{const[y,mo]=m.key.split('-');const k=`${y} T${Math.ceil(parseInt(mo)/3)}`;if(!q[k])q[k]={fat:0,l:k};q[k].fat+=m.fat;});const qa=Object.values(q).slice(-4);labels=qa.map(x=>x.l);fatD=qa.map(x=>x.fat);custoD=qa.map(x=>custoMes*3);lucroD=qa.map(x=>x.fat-custoMes*3);}
+  else{const y={};monthly.forEach(m=>{const yr=m.key.split('-')[0];if(!y[yr])y[yr]={fat:0,l:yr};y[yr].fat+=m.fat;});const ya=Object.values(y).slice(-4);labels=ya.map(x=>x.l);fatD=ya.map(x=>x.fat);custoD=ya.map(x=>custoMes*12);lucroD=ya.map(x=>x.fat-custoMes*12);}
+  const cur=monthly[monthly.length-1]||{fat:0,vendas:0,clientes:0,ticket:0};const prev=monthly[monthly.length-2]||{fat:0};const lucroAtual=cur.fat-custoMes;
+  const dEl=(v,p)=>{if(!p)return'';const pct=((v-p)/p*100).toFixed(0);return`<div class="stat-delta ${pct>=0?'up':'down'}">${pct>=0?'▲':'▼'} ${Math.abs(pct)}%</div>`;};
+  document.getElementById('resKpis').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Faturamento do Mês</div><div class="stat-value">${fmt(cur.fat)}</div>${dEl(cur.fat,prev.fat)}<div class="stat-sub">${cur.vendas} vendas</div></div>
+    <div class="stat-card"><div class="stat-label">Custo Mensal</div><div class="stat-value" style="color:var(--red)">${fmt(custoMes)}</div><div class="stat-sub">fixo + variável</div></div>
+    <div class="stat-card"><div class="stat-label">Lucro Estimado</div><div class="stat-value" style="color:${lucroAtual>=0?'var(--green)':'var(--red)'}">${fmt(lucroAtual)}</div>${dEl(lucroAtual,prev.fat-custoMes)}<div class="stat-sub">margem ${cur.fat?fmtP(lucroAtual/cur.fat*100):'—'}</div></div>`;
+  if(chartFatInst)chartFatInst.destroy();if(chartLucroInst)chartLucroInst.destroy();
+  chartFatInst=new Chart(document.getElementById('chartFat').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Faturamento',data:fatD,backgroundColor:'rgba(200,118,58,.75)',borderRadius:5}]},options:{plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+  chartLucroInst=new Chart(document.getElementById('chartLucro').getContext('2d'),{type:'bar',data:{labels,datasets:[{label:'Fat.',data:fatD,backgroundColor:'rgba(200,118,58,.6)',borderRadius:4},{label:'Custos',data:custoD,backgroundColor:'rgba(192,57,43,.45)',borderRadius:4},{label:'Lucro',data:lucroD,backgroundColor:lucroD.map(v=>v>=0?'rgba(45,122,79,.65)':'rgba(192,57,43,.65)'),borderRadius:4}]},options:{scales:{y:{ticks:{callback:v=>fmt(v)}}}}});
+  const last12=monthly.slice(-12).reverse();
+  document.getElementById('tabelaMensal').innerHTML=last12.length?
+    '<table id="tabelaMensalInner"><thead><tr><th>Mês</th><th>Clientes</th><th>Vendas</th><th>Ticket Médio</th><th>Faturamento</th><th>Custo</th><th>Saldo</th></tr></thead><tbody>'+
+    last12.map(m=>{const l=m.fat-custoMes;return`<tr><td style="font-weight:600">${m.label}</td><td>${m.clientes}</td><td>${m.vendas}</td><td>${fmt(m.ticket)}</td><td style="font-weight:700">${fmt(m.fat)}</td><td style="color:var(--red)">${fmt(custoMes)}</td><td style="font-weight:800;color:${l>=0?'var(--green)':'var(--red)'}">${l>=0?'+':''}${fmt(l)}</td></tr>`;}).join('')+'</tbody></table>'
+    :'<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Registre vendas para visualizar.</div></div>';
+}
+
+// ═══ CONTAS & CAIXA ═══
+function renderCaixaDash(){
+  const rec=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const pag=(lancamentos||[]).filter(l=>l.tipo==='pagar'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const el=document.getElementById('cx-receber');if(el){el.textContent=fmt(rec);}
+  const el2=document.getElementById('cx-pagar');if(el2){el2.textContent=fmt(pag);}
+  const el3=document.getElementById('cx-saldo');if(el3){const s=rec-pag;el3.textContent=fmt(s);el3.style.color=s>=0?'var(--green)':'var(--red)';}
+  const hoje=new Date();const em7=new Date(hoje);em7.setDate(em7.getDate()+7);
+  const v7=(lancamentos||[]).filter(l=>l.status!=='pago'&&new Date(l.venc)<=em7).length;
+  const el4=document.getElementById('cx-vence7');if(el4)el4.textContent=v7;
+  // st-receber/pagar dashboard
+  const sr=document.getElementById('st-receber');if(sr)sr.textContent=fmt(rec);
+  const sp=document.getElementById('st-pagar');if(sp)sp.textContent=fmt(pag);
+}
+function renderCaixa(){
+  renderCaixaDash();
+  // Projeção 30 dias
+  const hoje=new Date();const dias=[];for(let i=0;i<30;i++){const d=new Date(hoje);d.setDate(d.getDate()+i);dias.push(d);}
+  const projecao=dias.map(d=>{
+    const rec=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago'&&new Date(l.venc)<=d).reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+    const pag=(lancamentos||[]).filter(l=>l.tipo==='pagar'&&l.status!=='pago'&&new Date(l.venc)<=d).reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+    return rec-pag;
+  });
+  if(chartCaixaInst)chartCaixaInst.destroy();
+  chartCaixaInst=new Chart(document.getElementById('chartCaixa').getContext('2d'),{type:'line',data:{labels:dias.map(d=>d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})),datasets:[{label:'Saldo projetado',data:projecao,borderColor:'var(--accent)',backgroundColor:'rgba(200,118,58,.1)',fill:true,tension:.3,pointRadius:0}]},options:{scales:{y:{ticks:{callback:v=>fmt(v)}}},plugins:{legend:{display:false}}}});
+  const tabR=document.getElementById('tabReceber');const tabP=document.getElementById('tabPagar');
+  const row=(l)=>{const d=new Date(l.venc);const dif=Math.ceil((d-hoje)/86400000);const bk=dif<0?'background:var(--red-bg)':'';return`<tr style="${bk}"><td style="font-weight:600">${l.descricao}</td><td style="font-size:11px">${d.toLocaleDateString('pt-BR')}</td><td>${l.cat||'—'}</td><td style="font-weight:700">${fmt(l.valor)}</td><td>${l.nf||'—'}</td><td><div class="td-actions"><button class="icon-btn btn-xs" onclick="marcarPago('${l.id}')">✅</button><button class="icon-btn btn-xs" onclick="deleteLanc('${l.id}')" style="color:var(--red)">🗑</button></div></td></tr>`;};
+  const recList=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago').sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  tabR.innerHTML=recList.length?'<table><thead><tr><th>Descrição</th><th>Vencimento</th><th>Categoria</th><th>Valor</th><th>NF</th><th></th></tr></thead><tbody>'+recList.map(row).join('')+'</tbody></table>':'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sem contas a receber.</div></div>';
+  const pagList=(lancamentos||[]).filter(l=>l.tipo==='pagar'&&l.status!=='pago').sort((a,b)=>new Date(a.venc)-new Date(b.venc));
+  tabP.innerHTML=pagList.length?'<table><thead><tr><th>Descrição</th><th>Vencimento</th><th>Categoria</th><th>Valor</th><th>NF</th><th></th></tr></thead><tbody>'+pagList.map(row).join('')+'</tbody></table>':'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Sem contas a pagar.</div></div>';
+}
+
+// ═══ DRE ═══
+let _dreManual = JSON.parse(localStorage.getItem('bp_dre_manual')||'{}');
+let _dreMetas = JSON.parse(localStorage.getItem('bp_dre_metas')||'{}');
+
+function renderDREmesSelect(){
+  const sel=document.getElementById('dreMes');if(!sel)return;
+  const monthly=getMonthlyData();
+  const mesesAuto=monthly.map(m=>({key:m.key,label:m.label}));
+  const mesesManuais=Object.keys(_dreManual).map(k=>({key:k,label:new Date(k+'-15').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}));
+  // Merge e deduplica
+  const todos={};[...mesesAuto,...mesesManuais].forEach(m=>todos[m.key]=m);
+  const cur=curMonthKey();
+  if(!todos[cur]){const d=new Date(cur+'-15');todos[cur]={key:cur,label:d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})};}
+  const arr=Object.values(todos).sort((a,b)=>b.key.localeCompare(a.key)).slice(0,36);
+  sel.innerHTML=arr.map(m=>`<option value="${m.key}">${m.label}</option>`).join('');
+}
+
+function renderDRE(){
+  const mes=document.getElementById('dreMes')?.value||curMonthKey();
+  const monthly=getMonthlyData();const mAuto=monthly.find(x=>x.key===mes)||{fat:0};
+  const manual=_dreManual[mes]||{};
+  const meta=_dreMetas[mes]||manual.meta||0;
+
+  // Usa manual se existir, senão calcula dos dados
+  const recBruta=manual.receita||mAuto.fat||0;
+  const cpv=manual.cpv||(window.custoItems||[]).filter(c=>c.cat==='Matéria-prima').reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const despOp=manual.op||(window.custoItems||[]).filter(c=>c.tipo==='fixo'&&c.cat!=='Matéria-prima').reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const despAdm=manual.adm||(window.custos||[]).reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const folhaMes=manual.folha||(window.folhaList||[]).filter(f=>f.mes===mes).reduce((a,f)=>a+(parseFloat(f.bruto)||0),0);
+
+  const lucroBruto=recBruta-cpv;
+  const ebitda=lucroBruto-despOp-despAdm;
+  const lucroLiq=ebitda-folhaMes;
+  const metaAtingida=meta>0&&recBruta>=meta;
+
+  const rowEdit=(lbl,val,indent,bold,color,field)=>`<tr>
+    <td style="padding:10px 14px;padding-left:${indent*20+14}px;font-size:13px;font-weight:${bold?700:400}">${lbl}</td>
+    <td style="text-align:right;padding:6px 14px;">
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px">
+        <span style="font-size:13px;font-weight:${bold?700:400};color:${color||'var(--text)'}">${fmt(val)}</span>
+        ${field?`<button onclick="editarCampoDRE('${mes}','${field}',${val})" style="background:none;border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;color:var(--muted)" title="Editar">✏️</button>`:''}
+      </div>
+    </td>
+  </tr>`;
+  const sep=`<tr><td colspan="2" style="padding:0;height:2px;background:var(--border)"></td></tr>`;
+
+  document.getElementById('dreContent').innerHTML=`
+    ${meta>0?`<div class="alert ${metaAtingida?'alert-green':'alert-warn'}" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <span>${metaAtingida?'✅':'⚠️'} Meta do mês: <strong>${fmt(meta)}</strong> — ${metaAtingida?'Atingida! 🎉':'Faltam '+fmt(meta-recBruta)}</span>
+      <button class="btn btn-ghost btn-sm" onclick="editarMeta('${mes}')">✏️ Editar meta</button>
+    </div>`:`<div style="margin-bottom:16px;display:flex;justify-content:flex-end"><button class="btn btn-ghost btn-sm" onclick="editarMeta('${mes}')">🎯 Definir meta do mês</button></div>`}
+    ${manual.receita?`<div class="alert alert-info" style="margin-bottom:12px">📝 Este mês usa dados lançados manualmente. <button class="btn btn-ghost btn-sm" onclick="editarDREManual('${mes}')">Editar tudo</button></div>`:'<div class="alert alert-info" style="margin-bottom:12px">💡 Clique em ✏️ ao lado de qualquer linha para editar o valor deste mês.</div>'}
+    <div class="card">
+      <div class="card-header">
+        <span>📑</span>
+        <span class="card-title">DRE — ${new Date(mes+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}</span>
+        <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="exportDRE()">📥 Exportar</button>
+      </div>
+      <table><thead><tr><th>Conta</th><th style="text-align:right">Valor</th></tr></thead><tbody>
+        ${rowEdit('Receita Bruta (Faturamento)',recBruta,0,true,'','')}
+        ${rowEdit('(-) Custo dos Produtos (CPV)',cpv,1,false,'var(--red)','cpv')}
+        ${sep}
+        ${rowEdit('= Lucro Bruto',lucroBruto,0,true,lucroBruto>=0?'var(--green)':'var(--red)','')}
+        ${rowEdit('(-) Despesas Operacionais',despOp,1,false,'var(--red)','op')}
+        ${rowEdit('(-) Despesas Administrativas',despAdm,1,false,'var(--red)','adm')}
+        ${sep}
+        ${rowEdit('= EBITDA',ebitda,0,true,ebitda>=0?'var(--green)':'var(--red)','')}
+        ${rowEdit('(-) Impostos / Taxas',manual.imposto||0,1,false,'var(--red)','imposto')}
+        ${rowEdit('(-) Outras Deduções',manual.outras||0,1,false,'var(--red)','outras')}
+        ${sep}
+        ${rowEdit('= Lucro Líquido',lucroLiq-(manual.imposto||0)-(manual.outras||0),0,true,(lucroLiq-(manual.imposto||0)-(manual.outras||0))>=0?'var(--green)':'var(--red)','')}
+      </tbody></table>
+    </div>
+    <div class="row-3">
+      <div class="stat-card"><div class="stat-label">Receita Bruta</div><div class="stat-value">${fmt(recBruta)}</div></div>
+      <div class="stat-card"><div class="stat-label">EBITDA</div><div class="stat-value" style="color:${ebitda>=0?'var(--green)':'var(--red)'}">${fmt(ebitda)}</div></div>
+      <div class="stat-card"><div class="stat-label">Lucro Líquido</div><div class="stat-value" style="color:${(lucroLiq-(manual.imposto||0)-(manual.outras||0))>=0?'var(--green)':'var(--red)'}">${fmt(lucroLiq-(manual.imposto||0)-(manual.outras||0))}</div></div>
+    </div>`;
+}
+
+function editarMeta(mes){
+  const atual=_dreMetas[mes]||0;
+  const nova=prompt(`Meta do mês ${new Date(mes+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})} (R$):`,atual);
+  if(nova===null)return;
+  _dreMetas[mes]=parseFloat(nova)||0;
+  localStorage.setItem('bp_dre_metas',JSON.stringify(_dreMetas));
+  renderDRE();
+}
+
+function editarCampoDRE(mes, campo, valorAtual){
+  const nomes={cpv:'Custo dos Produtos (CPV)',op:'Despesas Operacionais',adm:'Despesas Administrativas',imposto:'Impostos / Taxas',outras:'Outras Deduções'};
+  const novo=prompt(`${nomes[campo]||campo} — mês ${new Date(mes+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})}:\n\nDigite o valor (R$):`, valorAtual);
+  if(novo===null)return;
+  const val=parseFloat(novo)||0;
+  if(!_dreManual[mes])_dreManual[mes]={};
+  _dreManual[mes][campo]=val;
+  localStorage.setItem('bp_dre_manual',JSON.stringify(_dreManual));
+  renderDRE();
+}
+function editarDREManual(mes){
+  const m=_dreManual[mes]||{};
+  document.getElementById('drem-mes').value=mes;
+  document.getElementById('drem-meta').value=_dreMetas[mes]||m.meta||'';
+  document.getElementById('drem-receita').value=m.receita||'';
+  document.getElementById('drem-cpv').value=m.cpv||'';
+  document.getElementById('drem-op').value=m.op||'';
+  document.getElementById('drem-adm').value=m.adm||'';
+  document.getElementById('drem-folha').value=m.folha||'';
+  document.getElementById('drem-obs').value=m.obs||'';
+  openModal('modalDREManual');
+}
+
+function salvarDREManual(){
+  const mes=document.getElementById('drem-mes').value;
+  if(!mes){alert('Informe o mês.');return;}
+  const receita=parseFloat(document.getElementById('drem-receita').value)||0;
+  if(!receita){alert('Informe a receita bruta.');return;}
+  _dreManual[mes]={
+    receita, cpv:parseFloat(document.getElementById('drem-cpv').value)||0,
+    op:parseFloat(document.getElementById('drem-op').value)||0,
+    adm:parseFloat(document.getElementById('drem-adm').value)||0,
+    folha:parseFloat(document.getElementById('drem-folha').value)||0,
+    obs:document.getElementById('drem-obs').value, meta:parseFloat(document.getElementById('drem-meta').value)||0
+  };
+  const metaVal=parseFloat(document.getElementById('drem-meta').value)||0;
+  if(metaVal){_dreMetas[mes]=metaVal;localStorage.setItem('bp_dre_metas',JSON.stringify(_dreMetas));}
+  localStorage.setItem('bp_dre_manual',JSON.stringify(_dreManual));
+  closeModal('modalDREManual');
+  renderDREmesSelect();
+  // Seleciona o mês recém lançado
+  setTimeout(()=>{document.getElementById('dreMes').value=mes;renderDRE();},100);
+}
+
+// ═══ CUSTOS VIEW ═══
+// Configurações editáveis de precificação (salvas no localStorage para simplicidade)
+let _markupPadrao = parseFloat(localStorage.getItem('bp_markup')||'0.7');
+let _breakevenMeta = parseFloat(localStorage.getItem('bp_breakeven')||'0');
+
+function abrirEditarPrecificacao(){
+  const markup=prompt('Markup padrão (ex: 0.7 = 30% sobre o preço / ex: 1.0 = 50% sobre o custo)\nAtual: '+_markupPadrao, _markupPadrao);
+  if(markup===null) return;
+  const be=prompt('Meta de Break-even mensal (R$) — deixe 0 para calcular automaticamente\nAtual: R$'+_breakevenMeta, _breakevenMeta);
+  if(be===null) return;
+  _markupPadrao=parseFloat(markup)||0.7;
+  _breakevenMeta=parseFloat(be)||0;
+  localStorage.setItem('bp_markup',_markupPadrao);
+  localStorage.setItem('bp_breakeven',_breakevenMeta);
+  renderCustosView();
+}
+
+function renderCustosView(){
+  const fixos=(window.custoItems||[]).filter(c=>c.tipo==='fixo');
+  const variaveis=(window.custoItems||[]).filter(c=>c.tipo==='variavel');
+  const totalFix=fixos.reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const totalVar=variaveis.reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const totalCusto=totalFix+totalVar+(window.custos||[]).reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const monthly=getMonthlyData();const cur=monthly[monthly.length-1]||{fat:0};
+
+  // Markup: 0.7 significa que o custo representa 70% do preço → margem de 30%
+  const margemMarkup=(1-_markupPadrao)*100; // ex: 0.7 → 30%
+  const markupSobreCusto=((1/_markupPadrao)-1)*100; // ex: 0.7 → ~42.86%
+
+  // Break-even: se definido manualmente usa, senão calcula
+  const breakeven=_breakevenMeta>0?_breakevenMeta:(margemMarkup>0?totalCusto/(margemMarkup/100):0);
+
+  // Margem de contribuição (sem mostrar % sobre receita)
+  const margem=cur.fat?((cur.fat-totalCusto)/cur.fat*100):0;
+
+  document.getElementById('custosContent').innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--muted)">Parâmetros de precificação da BuscaPrint</div>
+      <button class="btn btn-ghost btn-sm" onclick="abrirEditarPrecificacao()">✏️ Editar markup e break-even</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Markup Padrão</div>
+        <div class="stat-value">${_markupPadrao}</div>
+        <div class="stat-sub">${margemMarkup.toFixed(0)}% de margem sobre o preço</div>
+        <div class="stat-sub">${markupSobreCusto.toFixed(1)}% sobre o custo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Custo Fixo Total</div>
+        <div class="stat-value" style="color:var(--red)">${fmt(totalFix)}</div>
+        <div class="stat-sub">/mês</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Custo Variável</div>
+        <div class="stat-value" style="color:var(--orange)">${fmt(totalVar)}</div>
+        <div class="stat-sub">/mês</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Break-even</div>
+        <div class="stat-value" style="color:${cur.fat>=breakeven?'var(--green)':'var(--red)'}">${fmt(breakeven)}</div>
+        <div class="stat-sub">faturamento mínimo/mês${_breakevenMeta>0?' (manual)':' (calculado)'}</div>
+        <div class="stat-sub" style="font-weight:700;color:${cur.fat>=breakeven?'var(--green)':'var(--red)'}">
+          ${cur.fat>=breakeven?'✅ Atingido este mês':'⚠️ Faltam '+fmt(breakeven-cur.fat)}
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header"><span>🧮</span><span class="card-title">Como aplicar o markup ${_markupPadrao}</span></div>
+      <div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="background:var(--bg);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700">FÓRMULA</div>
+          <div style="font-size:14px;font-weight:700">Preço = Custo ÷ ${_markupPadrao}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700">EXEMPLO</div>
+          <div style="font-size:13px">Custo R$10 → Venda <strong style="color:var(--green)">${fmt(10/_markupPadrao)}</strong></div>
+        </div>
+        <div style="background:var(--bg);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700">MARGEM REAL</div>
+          <div style="font-size:14px;font-weight:700;color:var(--green)">${margemMarkup.toFixed(0)}% do preço de venda</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="card">
+        <div class="card-header"><span>🔴</span><span class="card-title">Custos Fixos</span><span class="card-sub">${fmt(totalFix)}/mês</span></div>
+        <table><thead><tr><th>Nome</th><th>Categoria</th><th>Valor/mês</th><th></th></tr></thead><tbody>
+          ${fixos.length?fixos.map(c=>`<tr><td style="font-weight:600">${c.nome}</td><td style="font-size:11px">${c.cat||'—'}</td><td style="color:var(--red);font-weight:700">${fmt(c.valor)}</td><td><button class="icon-btn" onclick="deleteCustoItem('${c.id}')" style="color:var(--red)">🗑</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Nenhum custo fixo cadastrado</td></tr>'}
+        </tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-header"><span>🟡</span><span class="card-title">Custos Variáveis</span><span class="card-sub">${fmt(totalVar)}/mês</span></div>
+        <table><thead><tr><th>Nome</th><th>Categoria</th><th>Valor/mês</th><th></th></tr></thead><tbody>
+          ${variaveis.length?variaveis.map(c=>`<tr><td style="font-weight:600">${c.nome}</td><td style="font-size:11px">${c.cat||'—'}</td><td style="color:var(--orange);font-weight:700">${fmt(c.valor)}</td><td><button class="icon-btn" onclick="deleteCustoItem('${c.id}')" style="color:var(--red)">🗑</button></td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:20px">Nenhum custo variável cadastrado</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>🏷️</span><span class="card-title">Simulador por SKU</span><div style="margin-left:auto;font-size:11px;color:var(--muted)">Preço calculado com markup ${_markupPadrao}</div></div>
+      <div style="padding:16px">
+        ${(window.skus||[]).length?
+          '<table><thead><tr><th>Produto</th><th>Custo</th><th>Preço c/ markup</th><th>Preço cadastrado</th><th>Margem real</th></tr></thead><tbody>'+
+          (window.skus||[]).map(s=>{
+            const precoSugerido=s.custo?s.custo/_markupPadrao:0;
+            const margReal=s.custo&&s.preco?(((s.preco-s.custo)/s.preco)*100).toFixed(1):0;
+            const ok=parseFloat(margReal)>=(margemMarkup-2);
+            return`<tr>
+              <td style="font-weight:600">${s.nome}</td>
+              <td>${fmt(s.custo)}</td>
+              <td style="font-weight:700;color:var(--accent)">${fmt(precoSugerido)}</td>
+              <td>${fmt(s.preco)}</td>
+              <td><span class="badge ${ok?'badge-ok':'badge-venc'}">${margReal}%</span></td>
+            </tr>`;}).join('')+'</tbody></table>'
+          :'<div style="color:var(--muted);font-size:12px">Cadastre SKUs para simular a precificação.</div>'}
+      </div>
+    </div>`;
+}
+
+// ═══ FOLHA ═══
+function renderFolhaView(){
+  const total=(window.folhaList||[]).reduce((a,f)=>a+(parseFloat(f.bruto)||0),0);
+  const prolabore=(window.folhaList||[]).filter(f=>f.tipo==='prolabore');
+  const salarios=(window.folhaList||[]).filter(f=>f.tipo==='salario');
+  const provisoes=(window.folhaList||[]).filter(f=>f.tipo==='provisao');
+  document.getElementById('folhaContent').innerHTML=`
+    <div class="stats-row-3">
+      <div class="stat-card"><div class="stat-label">Pró-labore (2 sócios)</div><div class="stat-value">${fmt(prolabore.reduce((a,f)=>a+(parseFloat(f.bruto)||0),0))}</div><div class="stat-sub">/mês</div></div>
+      <div class="stat-card"><div class="stat-label">Folha de Funcionários</div><div class="stat-value">${fmt(salarios.reduce((a,f)=>a+(parseFloat(f.bruto)||0),0))}</div><div class="stat-sub">/mês</div></div>
+      <div class="stat-card"><div class="stat-label">Provisões</div><div class="stat-value" style="color:var(--orange)">${fmt(provisoes.reduce((a,f)=>a+(parseFloat(f.bruto)||0),0))}</div><div class="stat-sub">13º + férias</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>👥</span><span class="card-title">Lançamentos de Folha</span><span class="card-sub">${fmt(total)} total</span></div>
+      ${(window.folhaList||[]).length?
+        '<table><thead><tr><th>Nome/Função</th><th>Tipo</th><th>Mês Ref.</th><th>Bruto</th><th>Encargos</th><th>Líquido</th><th></th></tr></thead><tbody>'+
+        (window.folhaList||[]).sort((a,b)=>b.mes?.localeCompare(a.mes||'')).map(f=>`<tr><td style="font-weight:600">${f.nome}</td><td><span class="badge ${f.tipo==='prolabore'?'badge-ok':f.tipo==='provisao'?'badge-hoje':'badge-hist'}">${f.tipo==='prolabore'?'Pró-labore':f.tipo==='salario'?'Salário':'Provisão'}</span></td><td style="font-size:11px">${f.mes||'—'}</td><td style="font-weight:700">${fmt(f.bruto)}</td><td style="color:var(--red)">${fmt(f.enc)}</td><td style="font-weight:700;color:var(--green)">${fmt((parseFloat(f.bruto)||0)-(parseFloat(f.enc)||0))}</td><td><button class="icon-btn" onclick="deleteFolha('${f.id}')" style="color:var(--red)">🗑</button></td></tr>`).join('')+'</tbody></table>'
+        :'<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Nenhum lançamento. Clique em "+ Lançar folha".</div></div>'}
+    </div>`;
+}
+
+// ═══ MÉTRICAS ═══
+function renderMetricas(){
+  const monthly=getMonthlyData();const cur=monthly[monthly.length-1]||{fat:0,vendas:0,clientes:0,ticket:0};
+  const totalClientes=clientes.length;const custoMes=getCustoMensal();
+  const receber=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const totalVendas=clientes.reduce((a,c)=>a+getTotal(c),0);const ltv=totalClientes?totalVendas/totalClientes:0;
+  const inad=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago'&&new Date(l.venc)<new Date()).reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const inadPct=receber?inad/receber*100:0;
+  const roi=custoMes?((cur.fat-custoMes)/custoMes*100):0;
+  document.getElementById('metricasContent').innerHTML=`
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-label">LTV (Valor por Cliente)</div><div class="stat-value">${fmt(ltv)}</div><div class="stat-sub">média histórica</div></div>
+      <div class="stat-card"><div class="stat-label">Ticket Médio (mês)</div><div class="stat-value">${fmt(cur.ticket)}</div><div class="stat-sub">${cur.vendas} vendas</div></div>
+      <div class="stat-card"><div class="stat-label">Taxa de Inadimplência</div><div class="stat-value" style="color:${inadPct>5?'var(--red)':'var(--green)'}">${fmtP(inadPct)}</div><div class="stat-sub">${fmt(inad)} vencidos</div></div>
+      <div class="stat-card"><div class="stat-label">ROI do Mês</div><div class="stat-value" style="color:${roi>=0?'var(--green)':'var(--red)'}">${fmtP(roi)}</div><div class="stat-sub">retorno s/ custos</div></div>
+    </div>
+    <div class="row-2">
+      <div class="card">
+        <div class="card-header"><span>📊</span><span class="card-title">Funil de Clientes</span></div>
+        <div style="padding:16px">
+          ${Object.entries(SI).map(([k,v])=>{const n=clientes.filter(c=>calcStatus(c)===k).length;const pct=totalClientes?n/totalClientes*100:0;return`<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span><span class="status ${v.cls}">${v.label}</span></span><span style="font-weight:700">${n} (${fmtP(pct)})</span></div><div style="height:6px;background:var(--border);border-radius:3px"><div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;transition:width .4s"></div></div></div>`;}).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span>💰</span><span class="card-title">Top 5 Clientes por Faturamento</span></div>
+        <table><thead><tr><th>Cliente</th><th>Total</th><th>Compras</th></tr></thead><tbody>
+          ${[...clientes].sort((a,b)=>getTotal(b)-getTotal(a)).slice(0,5).map(c=>`<tr><td style="font-weight:600">${c.nome}</td><td style="color:var(--green);font-weight:700">${fmt(getTotal(c))}</td><td>${(c.compras||[]).filter(p=>p.status==='finalizada').length}</td></tr>`).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--muted)">Sem dados</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>`;
+}
+
+// ═══ RELATÓRIOS ═══
+// ═══ RELATÓRIOS ═══
+let _relManual = JSON.parse(localStorage.getItem('bp_rel_manual')||'{}');
+
+function renderRelatorios(){
+  // Combina dados automáticos com manuais
+  const monthly = getMonthlyData();
+  const autoMap = {};
+  monthly.forEach(m => autoMap[m.key] = m);
+  const manualKeys = Object.keys(_relManual);
+  // Merge: manual sobrescreve auto se existir
+  const todos = {};
+  monthly.forEach(m => todos[m.key] = {...m, fonte:'auto'});
+  manualKeys.forEach(k => {
+    const r = _relManual[k];
+    const label = new Date(k+'-15').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+    todos[k] = {
+      key:k, label, fonte:'manual',
+      fat: r.faturamento||0, vendas: r.vendas||0,
+      ticket: r.vendas>0?(r.faturamento/r.vendas):0,
+      meta: r.meta||0, obs: r.obs||''
+    };
+  });
+  const lista = Object.values(todos).sort((a,b)=>b.key.localeCompare(a.key));
+
+  document.getElementById('relatoriosContent').innerHTML=`
+    <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+      ${[{t:'Quinzenal',i:'📅',p:'quinzenal'},{t:'Mensal',i:'📊',p:'mensal'},{t:'Trimestral',i:'📈',p:'trimestral'},{t:'Anual',i:'📋',p:'anual'}].map(r=>`
+        <button class="btn btn-ghost" onclick="gerarRelatorio('${r.p}')">${r.i} Gerar ${r.t}</button>`).join('')}
+      <button class="btn btn-primary" style="margin-left:auto" onclick="openModal('modalRelManual')">+ Lançar mês/período</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span>📁</span><span class="card-title">Histórico de Relatórios</span>
+        <span class="card-sub">${lista.length} períodos</span>
+        <button class="btn btn-ghost btn-sm" onclick="exportarTodosRelatorios()">📥 Exportar tudo</button>
+      </div>
+      ${lista.length?`
+      <table id="relHistTable">
+        <thead><tr>
+          <th>Período</th><th>Meta</th><th>Faturamento</th>
+          <th>Qtd Vendas</th><th>Ticket Médio</th><th>vs Meta</th><th>Fonte</th><th></th>
+        </tr></thead>
+        <tbody>
+          ${lista.map(m=>{
+            const meta=m.meta||_dreMetas[m.key]||0;
+            const atingiu=meta>0&&m.fat>=meta;
+            const diffMeta=meta>0?(m.fat-meta):null;
+            return`<tr>
+              <td style="font-weight:700">${m.label}</td>
+              <td style="color:var(--muted)">${meta>0?fmt(meta):'—'}</td>
+              <td style="font-weight:700;color:var(--green)">${fmt(m.fat)}</td>
+              <td style="text-align:center">${m.vendas||0}</td>
+              <td>${m.vendas>0?fmt(m.fat/m.vendas):'—'}</td>
+              <td>${meta>0?`<span class="badge ${atingiu?'badge-ok':'badge-venc'}">${atingiu?'✅ Atingida':'⚠️ '+fmt(Math.abs(diffMeta))}</span>`:'—'}</td>
+              <td><span class="badge ${m.fonte==='manual'?'badge-hist':'badge-ok'}">${m.fonte==='manual'?'Manual':'Auto'}</span></td>
+              <td><div class="td-actions">
+                <button class="icon-btn" onclick="verRelatorio('${m.key}')">👁</button>
+                <button class="icon-btn" onclick="exportarRelMes('${m.key}')">📥</button>
+                ${m.fonte==='manual'?`<button class="icon-btn" onclick="editarRelManual('${m.key}')" >✏️</button><button class="icon-btn" onclick="deletarRelManual('${m.key}')" style="color:var(--red)">🗑</button>`:''}
+              </div></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`
+      :'<div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Nenhum relatório ainda.<br>Registre vendas ou clique em "+ Lançar mês/período".</div></div>'}
+    </div>`;
+}
+
+function verRelatorio(key){
+  const monthly=getMonthlyData();const autoM=monthly.find(x=>x.key===key)||{fat:0,vendas:0,ticket:0};
+  const manual=_relManual[key];
+  const m = manual
+    ? {key, label:new Date(key+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}), fat:manual.faturamento||0, vendas:manual.vendas||0, ticket:manual.vendas>0?(manual.faturamento/manual.vendas):0, meta:manual.meta||0, obs:manual.obs||'', fonte:'manual'}
+    : {...autoM, label:new Date(key+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'}), meta:_dreMetas[key]||0, fonte:'auto'};
+  const custoMes=getCustoMensal();
+  const lucro=m.fat-custoMes;
+  const meta=m.meta||_dreMetas[key]||0;
+  document.getElementById('relTitulo').textContent='Relatório — '+m.label+' — BuscaPrint';
+  document.getElementById('relBody').innerHTML=`
+    <div style="background:var(--al);border-radius:8px;padding:14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:16px;font-weight:800">BuscaPrint — ${m.label}</div>
+      <div style="font-size:11px;color:var(--muted)">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})} · Fonte: ${m.fonte==='manual'?'Lançamento manual':'Dados do sistema'}</div></div>
+      ${m.fonte==='manual'?`<span class="badge badge-hist">Manual</span>`:`<span class="badge badge-ok">Automático</span>`}
+    </div>
+    ${meta>0?`<div class="alert ${m.fat>=meta?'alert-green':'alert-warn'}" style="margin-bottom:14px">
+      🎯 Meta: <strong>${fmt(meta)}</strong> — ${m.fat>=meta?'✅ Atingida':'⚠️ Faltaram '+fmt(meta-m.fat)}
+    </div>`:''}
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">META</div>
+        <div style="font-size:18px;font-weight:800">${meta>0?fmt(meta):'—'}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">FATURAMENTO</div>
+        <div style="font-size:18px;font-weight:800;color:var(--green)">${fmt(m.fat)}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">QTD VENDAS</div>
+        <div style="font-size:18px;font-weight:800">${m.vendas||0}</div>
+      </div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TICKET MÉDIO</div>
+        <div style="font-size:18px;font-weight:800">${m.vendas>0?fmt(m.fat/m.vendas):'—'}</div>
+      </div>
+    </div>
+    ${m.obs?`<div style="background:var(--bg);border-radius:8px;padding:12px;font-size:12px;color:var(--muted)"><b>Observações:</b> ${m.obs}</div>`:''}`;
+  currentRelData={titulo:'Relatorio-'+m.label,key,m,custoMes};
+  openModal('modalRelatorio');
+}
+
+function gerarRelatorio(periodo){
+  const monthly=getMonthlyData();const custoMes=getCustoMensal();
+  let titulo='',dados=[];
+  if(periodo==='quinzenal'){titulo='Relatório Quinzenal';dados=monthly.slice(-2);}
+  else if(periodo==='mensal'){titulo='Relatório Mensal';dados=monthly.slice(-1);}
+  else if(periodo==='trimestral'){titulo='Relatório Trimestral';dados=monthly.slice(-3);}
+  else{titulo='Relatório Anual';dados=monthly.slice(-12);}
+  // Mescla com manuais
+  dados=dados.map(d=>{
+    const manual=_relManual[d.key];
+    if(manual){return {...d,fat:manual.faturamento||d.fat,vendas:manual.vendas||d.vendas,meta:manual.meta||_dreMetas[d.key]||0};}
+    return {...d,meta:_dreMetas[d.key]||0};
+  });
+  const totalFat=dados.reduce((a,m)=>a+m.fat,0);
+  const totalVendas=dados.reduce((a,m)=>a+(m.vendas||0),0);
+  const totalCusto=custoMes*dados.length;
+  const lucro=totalFat-totalCusto;
+  document.getElementById('relTitulo').textContent=titulo+' — BuscaPrint';
+  document.getElementById('relBody').innerHTML=`
+    <div style="background:var(--al);border-radius:8px;padding:14px;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800">BuscaPrint — ${titulo}</div>
+      <div style="font-size:12px;color:var(--muted)">Gerado em ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">FATURAMENTO TOTAL</div><div style="font-size:20px;font-weight:800;color:var(--green)">${fmt(totalFat)}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">QTD VENDAS</div><div style="font-size:20px;font-weight:800">${totalVendas}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">TICKET MÉDIO</div><div style="font-size:20px;font-weight:800">${totalVendas?fmt(totalFat/totalVendas):'—'}</div></div>
+      <div style="background:var(--bg);border-radius:8px;padding:12px;text-align:center"><div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">LUCRO ESTIMADO</div><div style="font-size:20px;font-weight:800;color:${lucro>=0?'var(--green)':'var(--red)'}">${fmt(lucro)}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="background:var(--bg)">
+        <th style="padding:8px 12px;text-align:left;font-size:11px">Mês</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px">Meta</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px">Faturamento</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px">Qtd Vendas</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px">Ticket Médio</th>
+        <th style="padding:8px 12px;text-align:right;font-size:11px">vs Meta</th>
+      </tr></thead>
+      <tbody>${dados.map(m=>{
+        const meta=m.meta||0;const diff=meta>0?m.fat-meta:null;
+        return`<tr>
+          <td style="padding:8px 12px;font-weight:600">${m.label}</td>
+          <td style="padding:8px 12px;text-align:right;color:var(--muted)">${meta>0?fmt(meta):'—'}</td>
+          <td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--green)">${fmt(m.fat)}</td>
+          <td style="padding:8px 12px;text-align:right">${m.vendas||0}</td>
+          <td style="padding:8px 12px;text-align:right">${(m.vendas||0)>0?fmt(m.fat/(m.vendas||1)):'—'}</td>
+          <td style="padding:8px 12px;text-align:right">${diff!==null?`<span style="color:${diff>=0?'var(--green)':'var(--red)'};font-weight:700">${diff>=0?'+':''}${fmt(diff)}</span>`:'—'}</td>
+        </tr>`;}).join('')}
+      </tbody>
+    </table>`;
+  currentRelData={titulo,dados,custoMes};
+  openModal('modalRelatorio');
+}
+
+function exportarRelMes(key){
+  const monthly=getMonthlyData();const autoM=monthly.find(x=>x.key===key)||{fat:0,vendas:0};
+  const manual=_relManual[key];
+  const fat=manual?.faturamento||autoM.fat||0;
+  const vendas=manual?.vendas||autoM.vendas||0;
+  const meta=manual?.meta||_dreMetas[key]||0;
+  const label=new Date(key+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  const ws_data=[['BuscaPrint — Relatório '+label],[],['Indicador','Valor'],['Meta',meta||'—'],['Faturamento',fat],['Qtd de Vendas',vendas],['Ticket Médio',vendas>0?(fat/vendas).toFixed(2):'—'],['Observações',manual?.obs||'—']];
+  const ws=XLSX.utils.aoa_to_sheet(ws_data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Relatório');
+  XLSX.writeFile(wb,'Relatorio-'+key+'-BuscaPrint.xlsx');
+}
+
+function exportarTodosRelatorios(){
+  const monthly=getMonthlyData();
+  const rows=[['Mês','Meta','Faturamento','Qtd Vendas','Ticket Médio','vs Meta']];
+  const todos={};
+  monthly.forEach(m=>todos[m.key]={...m,meta:_dreMetas[m.key]||0});
+  Object.entries(_relManual).forEach(([k,r])=>{
+    todos[k]={key:k,fat:r.faturamento||0,vendas:r.vendas||0,ticket:r.vendas>0?r.faturamento/r.vendas:0,meta:r.meta||_dreMetas[k]||0,label:new Date(k+'-15').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})};
+  });
+  Object.values(todos).sort((a,b)=>a.key.localeCompare(b.key)).forEach(m=>{
+    const diff=m.meta>0?m.fat-m.meta:null;
+    rows.push([m.label,m.meta||'—',m.fat,m.vendas||0,m.vendas>0?(m.fat/m.vendas).toFixed(2):'—',diff!==null?(diff>=0?'+'+diff.toFixed(0):diff.toFixed(0)):'—']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Relatórios');
+  XLSX.writeFile(wb,'Historico-Relatorios-BuscaPrint.xlsx');
+}
+
+function exportRelatorio(){
+  if(!currentRelData)return;
+  const{titulo,dados,custoMes}=currentRelData;
+  if(dados){
+    const ws_data=[['BuscaPrint — '+titulo],['Gerado em '+new Date().toLocaleDateString('pt-BR')],[],['Mês','Meta','Faturamento','Qtd Vendas','Ticket Médio'],...dados.map(m=>[m.label,m.meta||'—',m.fat,m.vendas||0,(m.vendas||0)>0?(m.fat/(m.vendas||1)).toFixed(2):'—'])];
+    const ws=XLSX.utils.aoa_to_sheet(ws_data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Relatório');
+    XLSX.writeFile(wb,titulo.replace(/ /g,'-')+'-BuscaPrint.xlsx');
+  } else if(currentRelData.key){
+    exportarRelMes(currentRelData.key);
+  }
+}
+
+function editarRelManual(key){
+  const r=_relManual[key]||{};
+  document.getElementById('relm-mes').value=key;
+  document.getElementById('relm-meta').value=r.meta||_dreMetas[key]||'';
+  document.getElementById('relm-fat').value=r.faturamento||'';
+  document.getElementById('relm-vendas').value=r.vendas||'';
+  document.getElementById('relm-obs').value=r.obs||'';
+  openModal('modalRelManual');
+}
+
+function deletarRelManual(key){
+  if(!confirm('Excluir este relatório manual?'))return;
+  delete _relManual[key];
+  localStorage.setItem('bp_rel_manual',JSON.stringify(_relManual));
+  renderRelatorios();
+}
+
+function salvarRelManual(){
+  const mes=document.getElementById('relm-mes').value;
+  if(!mes){alert('Informe o mês.');return;}
+  const fat=parseFloat(document.getElementById('relm-fat').value)||0;
+  const meta=parseFloat(document.getElementById('relm-meta').value)||0;
+  const vendas=parseInt(document.getElementById('relm-vendas').value)||0;
+  _relManual[mes]={faturamento:fat,meta,vendas,obs:document.getElementById('relm-obs').value};
+  if(meta){_dreMetas[mes]=meta;localStorage.setItem('bp_dre_metas',JSON.stringify(_dreMetas));}
+  localStorage.setItem('bp_rel_manual',JSON.stringify(_relManual));
+  closeModal('modalRelManual');
+  renderRelatorios();
+  renderDREmesSelect();
+}
+
+function exportDRE(){
+  const mes=document.getElementById('dreMes')?.value||curMonthKey();
+  const monthly=getMonthlyData();const mAuto=monthly.find(x=>x.key===mes)||{fat:0};
+  const manual=_dreManual[mes]||{};const meta=_dreMetas[mes]||0;
+  const recBruta=manual.receita||mAuto.fat||0;
+  const cpv=manual.cpv||(window.custoItems||[]).filter(c=>c.cat==='Matéria-prima').reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const despOp=manual.op||(window.custoItems||[]).filter(c=>c.tipo==='fixo'&&c.cat!=='Matéria-prima').reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const despAdm=manual.adm||(window.custos||[]).reduce((a,c)=>a+(parseFloat(c.valor)||0),0);
+  const folhaMes=manual.folha||(window.folhaList||[]).filter(f=>f.mes===mes).reduce((a,f)=>a+(parseFloat(f.bruto)||0),0);
+  const lucroBruto=recBruta-cpv;const ebitda=lucroBruto-despOp-despAdm;const lucroLiq=ebitda-folhaMes;
+  const ws_data=[
+    ['BuscaPrint — DRE (MEI)'],
+    ['Período: '+new Date(mes+'-15').toLocaleDateString('pt-BR',{month:'long',year:'numeric'})],
+    ['Gerado em: '+new Date().toLocaleDateString('pt-BR')],
+    meta>0?['Meta do mês: R$'+meta,'Situação: '+(recBruta>=meta?'✅ Atingida':'⚠️ Faltam R$'+(meta-recBruta).toFixed(0))]:[''],
+    [],['Conta','Valor (R$)'],
+    ['Receita Bruta (Faturamento)',recBruta],
+    ['(-) Custo dos Produtos (CPV)',-cpv],
+    ['= Lucro Bruto',lucroBruto],
+    ['(-) Despesas Operacionais',-despOp],
+    ['(-) Despesas Administrativas',-despAdm],
+    ['= EBITDA',ebitda],
+    ['(-) Folha / Pró-labore',-folhaMes],
+    ['= Lucro Líquido',lucroLiq]
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(ws_data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'DRE');
+  XLSX.writeFile(wb,'DRE-BuscaPrint-'+mes+'.xlsx');
+}
+
+function exportRelatorioPDF(){alert('Para salvar como PDF:\n1. Feche este modal\n2. Pressione Ctrl+P (ou Cmd+P no Mac)\n3. Escolha "Salvar como PDF" na impressora\n\nIsso salva o relatório exatamente como está na tela.');}
+
+// ═══ HISTÓRICO FINANCEIRO ═══
+function renderHistoricoFin(){
+  const movs=(window.movCaixa||[]).sort((a,b)=>b.data?.localeCompare(a.data||'')).slice(0,50);
+  const totalE=movs.filter(m=>m.tipo==='entrada').reduce((a,m)=>a+(parseFloat(m.valor)||0),0);
+  const totalS=movs.filter(m=>m.tipo==='saida').reduce((a,m)=>a+(parseFloat(m.valor)||0),0);
+  document.getElementById('historicoFinContent').innerHTML=`
+    <div class="row-3" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">Total Entradas</div><div class="stat-value" style="color:var(--green)">${fmt(totalE)}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Saídas</div><div class="stat-value" style="color:var(--red)">${fmt(totalS)}</div></div>
+      <div class="stat-card"><div class="stat-label">Saldo Histórico</div><div class="stat-value" style="color:${(totalE-totalS)>=0?'var(--green)':'var(--red)'}">${fmt(totalE-totalS)}</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span>🗄️</span><span class="card-title">Movimentos de Caixa</span><span class="card-sub">${movs.length} registros</span>
+        <button class="btn btn-ghost btn-sm" onclick="exportTabela('movHistTable','historico-caixa')">📥 Exportar</button>
+      </div>
+      ${movs.length?
+        '<table id="movHistTable"><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Categoria</th><th>Valor</th><th></th></tr></thead><tbody>'+
+        movs.map(m=>`<tr><td style="font-family:monospace;font-size:11px">${m.data?new Date(m.data).toLocaleDateString('pt-BR'):'—'}</td><td><span class="badge ${m.tipo==='entrada'?'badge-ok':'badge-venc'}">${m.tipo==='entrada'?'↑ Entrada':'↓ Saída'}</span></td><td style="font-weight:600">${m.descricao||'—'}</td><td style="font-size:11px;color:var(--muted)">${m.cat||'—'}</td><td style="font-weight:700;color:${m.tipo==='entrada'?'var(--green)':'var(--red)'}">${m.tipo==='entrada'?'+':'−'}${fmt(m.valor)}</td><td><button class="icon-btn" onclick="deleteMovCaixa('${m.id}')" style="color:var(--red)">🗑</button></td></tr>`).join('')+'</tbody></table>'
+        :'<div class="empty"><div class="empty-icon">🗄️</div><div class="empty-text">Nenhum movimento cadastrado.<br>Clique em "+ Lançar movimento" ou importe uma planilha.</div></div>'}
+    </div>`;
+}
+
+// ═══ CATEGORIAS SKU ═══
+let _catsSKU = JSON.parse(localStorage.getItem('bp_cats_sku')||'["Personalizados","Empreendedores"]');
+
+function salvarCategorias(){
+  localStorage.setItem('bp_cats_sku', JSON.stringify(_catsSKU));
+  popularCatsSKU();
+  closeModal('modalCatSKU');
+}
+function popularCatsSKU(){
+  // Popula todos os selects de categoria de SKU
+  const opts = '<option value="">Selecione...</option>'+_catsSKU.map(c=>`<option>${c}</option>`).join('');
+  ['sku-cat','skuCat'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const prev = el.value;
+    if(id==='skuCat') el.innerHTML='<option value="">Todas as categorias</option>'+_catsSKU.map(c=>`<option>${c}</option>`).join('');
+    else el.innerHTML=opts;
+    el.value=prev;
+  });
+}
+function renderCatSKUList(){
+  document.getElementById('catSKUList').innerHTML=_catsSKU.map((c,i)=>`
+    <div style="display:flex;gap:8px;align-items:center">
+      <input type="text" value="${c}" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;" oninput="_catsSKU[${i}]=this.value">
+      <button style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer" onclick="_catsSKU.splice(${i},1);renderCatSKUList()">×</button>
+    </div>`).join('');
+}
+function adicionarCategoria(){
+  const v=document.getElementById('novaCatInput').value.trim();
+  if(!v) return;
+  _catsSKU.push(v);
+  document.getElementById('novaCatInput').value='';
+  renderCatSKUList();
+}
+
+// ═══ SKUs ═══
+function renderSKUs(){
+  const q=(document.getElementById('skuSearch')?.value||'').toLowerCase();
+  const cat=document.getElementById('skuCat')?.value||'';
+  const todos=window.skus||[];
+  const list=todos.filter(s=>(!q||(s.nome||'').toLowerCase().includes(q)||(s.cod||'').toLowerCase().includes(q))&&(!cat||s.cat===cat));
+  const el=document.getElementById('skuTable');if(!el)return;
+  document.getElementById('skuCount').textContent=list.length+' produtos';
+  // Resumo por categoria
+  const persCat=todos.filter(s=>s.cat==='Personalizados');
+  const empCat=todos.filter(s=>s.cat==='Empreendedores');
+  const persV=persCat.reduce((a,s)=>a+(parseInt(s.total_vendas)||0),0);
+  const empV=empCat.reduce((a,s)=>a+(parseInt(s.total_vendas)||0),0);
+  const totalV=persV+empV;
+  const resumoEl=document.getElementById('skuResumo');
+  if(resumoEl)resumoEl.innerHTML=`
+    <div class="stat-card"><div class="stat-label">🎨 Personalizados</div><div class="stat-value">${persV}</div><div class="stat-sub">${persCat.length} produtos · ${totalV?Math.round(persV/totalV*100):0}% das vendas</div></div>
+    <div class="stat-card"><div class="stat-label">🏪 Empreendedores</div><div class="stat-value">${empV}</div><div class="stat-sub">${empCat.length} produtos · ${totalV?Math.round(empV/totalV*100):0}% das vendas</div></div>
+    <div class="stat-card"><div class="stat-label">📦 Total vendas</div><div class="stat-value">${totalV}</div><div class="stat-sub">todos os produtos</div></div>`;
+  el.innerHTML=list.length?
+    '<table id="skuTableInner"><thead><tr><th>Produto</th><th>Categoria</th><th>Valor</th><th>Unidade</th><th>Vendas</th><th>Obs</th><th></th></tr></thead><tbody>'+
+    list.map(s=>{const v=parseInt(s.total_vendas)||0;const cc=s.cat==='Personalizados'?'badge-purple':s.cat==='Empreendedores'?'badge-orange':'badge-blue';return`<tr>
+      <td style="font-weight:600">${s.nome}${s.cod?`<div style="font-family:monospace;font-size:10px;color:var(--muted)">${s.cod}</div>`:''}</td>
+      <td><span class="badge ${cc}">${s.cat||'—'}</span></td>
+      <td style="font-weight:700;color:var(--green)">${s.preco?fmt(s.preco):'—'}</td>
+      <td style="font-size:11px">${s.un||'unidade'}</td>
+      <td><span style="font-weight:700;color:${v>0?'var(--accent)':'var(--muted)'}">${v}</span> <span style="font-size:10px;color:var(--muted)">vendas</span></td>
+      <td style="font-size:11px;color:var(--muted);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.especificacao||'—'}</td>
+      <td><div class="td-actions">
+        <button class="icon-btn" onclick="editSKU('${s.id}')">✏️</button>
+        <button class="icon-btn" onclick="deleteSKU('${s.id}')" style="color:var(--red)">🗑</button>
+      </div></td>
+    </tr>`;}).join('')+'</tbody></table>'
+    :'<div class="empty"><div class="empty-icon">🏷️</div><div class="empty-text">Nenhum produto cadastrado.</div></div>';
+}
+
+// ═══ CLIENTES ═══
+function filterByStatus(s){showView('clientes',null);document.getElementById('filterStatus').value=s;renderClientesList();}
+function renderClientesList(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();const fs=document.getElementById('filterStatus')?.value||'';
+  const list=clientes.filter(c=>(!q||(c.nome||'').toLowerCase().includes(q)||(c.whats||'').includes(q))&&(!fs||calcStatus(c)===fs));
+  document.getElementById('countClientes').textContent=list.length+' clientes';
+  const el=document.getElementById('clientesTable');if(!el)return;
+  el.innerHTML=list.length?'<table><thead><tr><th>Cliente</th><th>Status</th><th>Última compra</th><th>Total</th><th>Tipo</th><th></th></tr></thead><tbody>'+
+    list.map(c=>{const s=calcStatus(c);const si=SI[s];const d=getDays(c);const t=getTotal(c);return`<tr><td><div style="font-weight:600">${c.nome}</div><div style="font-size:11px;color:var(--muted)">${c.whats||c.insta||''}</div></td><td><span class="status ${si.cls}">${si.label}</span></td><td style="font-size:11px">${d!=null?d+' dias':'Sem compras'}</td><td style="font-weight:700;color:var(--green)">${fmt(t)}</td><td style="font-size:11px;text-transform:capitalize">${c.tipo||'personalizado'}</td><td><div class="td-actions"><button class="icon-btn" onclick="verPerfil('${c.id}')">👁</button><button class="icon-btn" onclick="editarCliente('${c.id}')" title="Editar cliente">✏️</button><button class="icon-btn" onclick="addCompraFor('${c.id}')">🛒</button><button class="icon-btn" onclick="deleteCliente('${c.id}')" style="color:var(--red)">🗑</button></div></td></tr>`;}).join('')+'</tbody></table>'
+    :'<div class="empty"><div class="empty-icon">👥</div><div class="empty-text">Nenhum cliente encontrado.</div></div>';
+}
+function renderHistoricos(){
+  const list=window.historicos||[];const el=document.getElementById('historicosTable');if(!el)return;
+  document.getElementById('countHistoricos').textContent=list.length+' registros';
+  el.innerHTML=list.length?'<table><thead><tr><th>Cliente</th><th>Período</th><th>Tipo</th><th>Total Estimado</th><th>Motivo</th><th></th></tr></thead><tbody>'+
+    list.map(h=>`<tr><td><div style="font-weight:600">${h.nome} <span class="badge badge-hist">histórico</span></div><div style="font-size:11px;color:var(--muted)">${h.whats||''}</div></td><td style="font-size:11px">${h.periodo||'—'}</td><td style="font-size:11px;text-transform:capitalize">${h.tipo||'—'}</td><td style="font-weight:700;color:var(--muted)">${fmt(h.total)}</td><td style="font-size:11px;color:var(--muted)">${h.motivo||'—'}</td><td><button class="icon-btn" onclick="deleteHistorico('${h.id}')" style="color:var(--red)">🗑</button></td></tr>`).join('')+'</tbody></table>'
+    :'<div class="empty"><div class="empty-icon">📁</div><div class="empty-text">Nenhum histórico. Clique em "+ Adicionar histórico".</div></div>';
+}
+function renderAgenda(){
+  document.getElementById('todayDate').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  const sec=(icon,label,cor,list,msgFn)=>!list.length?'':
+    `<div style="margin-bottom:18px"><div style="font-size:11px;font-weight:700;color:${cor};margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">${icon} ${label} (${list.length})</div>
+    ${list.map(c=>`<div style="display:flex;align-items:center;gap:10px;padding:9px;background:var(--bg);border-radius:7px;margin-bottom:5px"><div style="font-weight:600;min-width:150px;font-size:12px">${c.nome}</div><div style="font-size:11px;color:var(--muted);flex:1">${msgFn(c)}</div><button class="btn btn-ghost btn-xs" onclick="verPerfil('${c.id}')">Ver</button></div>`).join('')}</div>`;
+  const html=sec('🔥','Urgente','var(--red)',clientes.filter(c=>calcStatus(c)==='abandonado'),()=>'Carrinho abandonado — follow-up imediato')
+    +sec('📌','Pós-venda','var(--orange)',clientes.filter(c=>calcStatus(c)==='recente'),c=>`Comprou há ${getDays(c)} dias`)
+    +sec('💛','Remarketing','var(--yellow)',clientes.filter(c=>['morno','ativo'].includes(calcStatus(c))),c=>`Há ${getDays(c)} dias sem contato`);
+  document.getElementById('agendaContent').innerHTML=html||'<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">Nenhuma ação pendente!</div></div>';
+}
+function renderFunil(viewId,status){
+  const list=clientes.filter(c=>calcStatus(c)===status);const el=document.getElementById(viewId+'Content');if(!el)return;
+  el.innerHTML=list.length?'<table><thead><tr><th>Cliente</th><th>Contato</th><th>Dias</th><th>Total</th><th>Ação</th><th></th></tr></thead><tbody>'+
+    list.map(c=>{const d=getDays(c);const t=getTotal(c);return`<tr><td style="font-weight:600">${c.nome}</td><td style="font-size:11px">${c.whats||c.insta||'—'}</td><td style="font-weight:700">${d!=null?d:'—'}</td><td style="color:var(--green);font-weight:700">${fmt(t)}</td><td style="font-size:11px;color:var(--muted)">${SI[status].acao}</td><td><button class="icon-btn" onclick="verPerfil('${c.id}')">👁</button></td></tr>`;}).join('')+'</tbody></table>'
+    :'<div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">Nenhum cliente nesta categoria!</div></div>';
+}
+
+// ═══ PERFIL ═══
+function verPerfil(id){
+  currentClienteId=id;const c=clientes.find(x=>x.id===id);if(!c)return;
+  const s=calcStatus(c);const si=SI[s];const total=getTotal(c);const d=getDays(c);const nC=(c.compras||[]).filter(p=>p.status==='finalizada').length;
+  document.getElementById('perfilNome').textContent=c.nome;
+  document.getElementById('perfilBody').innerHTML=`
+    <div class="profile-header">
+      <div class="profile-avatar">${c.nome[0].toUpperCase()}</div>
+      <div style="flex:1">
+        <div class="profile-name">${c.nome}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${c.whats||''} ${c.insta?'· '+c.insta:''}</div>
+        <div style="margin-top:7px"><span class="status ${si.cls}">${si.label}</span></div>
+        <div class="profile-stats">
+          <div><div class="p-stat-val">${nC}</div><div class="p-stat-label">compras</div></div>
+          <div><div class="p-stat-val">${fmt(total)}</div><div class="p-stat-label">total gasto</div></div>
+          <div><div class="p-stat-val">${d!=null?d+'d':'—'}</div><div class="p-stat-label">dias atrás</div></div>
+          <div><div class="p-stat-val">${nC?fmt(total/nC):'—'}</div><div class="p-stat-label">ticket médio</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;font-size:12px">
+      <div><b>Tipo:</b> ${c.tipo||'personalizado'} · <b>Pref:</b> ${c.pref||'—'} · <b>Pgto:</b> ${c.pgto||'—'}</div>
+      <div><b>Origem:</b> ${c.origem||'—'} · <b>Aniv:</b> ${c.aniv||'—'}</div>
+    </div>
+    ${c.obs?`<div style="background:var(--bg);border-radius:7px;padding:10px;font-size:12px;margin-bottom:12px">${c.obs}</div>`:''}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:var(--muted);letter-spacing:.06em">Histórico de Compras</div>
+      <button class="btn btn-ghost btn-sm" onclick="editarCliente('${c.id}')">✏️ Editar cadastro</button>
+    </div>
+    <div>${!(c.compras&&c.compras.length)?'<div style="color:var(--muted);font-size:12px">Sem compras registradas.</div>':
+      [...(c.compras||[])].reverse().map(p=>`<div style="display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);align-items:flex-start">
+        <div style="width:7px;height:7px;border-radius:50%;margin-top:5px;flex-shrink:0;background:${p.status==='abandonado'?'var(--dark)':p.status==='finalizada'?'var(--green)':'var(--yellow)'}"></div>
+        <div style="flex:1">
+          <div style="font-size:10px;color:var(--muted);font-family:monospace">${new Date(p.data).toLocaleDateString('pt-BR')} · ${p.canal} · <span style="color:${p.status==='finalizada'?'var(--green)':'var(--red)'}">${p.status}</span></div>
+          <div style="font-size:12px;font-weight:600">${p.produtos||'—'}</div>
+          ${p.skus&&p.skus.length?`<div style="font-size:11px;color:var(--muted);margin-top:2px">🏷 ${p.skus.map(sv=>sv.nome+(sv.qtd>1?' x'+sv.qtd:'')).join(', ')}</div>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;font-weight:700;color:var(--green)">${p.valor?fmt(p.valor):''}</div>
+          <button onclick="editarCompra('${c.id}','${p.id}')" style="font-size:10px;background:none;border:1px solid var(--border);border-radius:5px;padding:2px 6px;cursor:pointer;color:var(--muted);margin-top:3px">✏️ editar</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  document.getElementById('btnAbordagem').textContent='💬 Sugestão de abordagem';
+  document.getElementById('btnAbordagem').onclick=pedirAbordagem;
+  openModal('modalPerfil');
+}
+function pedirAbordagem(){
+  const c=clientes.find(x=>x.id===currentClienteId);if(!c)return;
+  closeModal('modalPerfil');showView('crm',null);
+  const s=calcStatus(c);const d=getDays(c);
+  document.getElementById('crmInput').value=`ação para ${c.nome} — ${SI[s].label}, ${d!=null?d+'d sem comprar':'sem compras'}, total: ${fmt(getTotal(c))}, tipo: ${c.tipo||'personalizado'}`;
+}
+
+// ═══ FIREBASE CRUD ═══
+function openModal(id,tipo){
+  document.getElementById(id).classList.add('open');
+  if(id==='modalLancamento'){
+    currentLancTipo=tipo||'pagar';
+    document.getElementById('lancTitulo').textContent=tipo==='receber'?'Nova Conta a Receber':'Nova Conta a Pagar';
+    document.getElementById('lancIcone').textContent=tipo==='receber'?'🟢':'🔴';
+    document.getElementById('lanc-venc').value=new Date().toISOString().split('T')[0];
+  }
+  if(id==='modalCompra'){
+    _vendaClienteId=null;
+    window._cpSkusVendidos=[];
+    const skuLista=document.getElementById('cp-skus-lista');if(skuLista)skuLista.innerHTML='';
+    document.getElementById('cp-busca').value='';
+    document.getElementById('cp-selecionado').style.display='none';
+    document.getElementById('cp-novo-bloco').style.display='none';
+    document.getElementById('cp-dropdown').style.display='none';
+    document.getElementById('cp-data').value=new Date().toISOString().split('T')[0];
+    popularSkuSelect();
+  }
+  if(id==='modalCustos')renderCustosList();
+  if(id==='modalMovCaixa')document.getElementById('mov-data').value=new Date().toISOString().split('T')[0];
+  if(id==='modalFolha')document.getElementById('fol-mes').value=curMonthKey();
+  if(id==='modalSKU'){
+    currentSKUId=null;
+    document.getElementById('skuModalTitle').textContent='Novo Produto';
+    document.getElementById('btnSalvSKU').textContent='Salvar produto';
+    ['sku-nome','sku-cod','sku-preco','sku-desc'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+    document.getElementById('sku-cat').value='';
+    document.getElementById('sku-un').value='unidade';
+  }
+  if(id==='modalCatSKU'){renderCatSKUList();}
+  if(id==='modalDREManual'){document.getElementById('drem-mes').value=curMonthKey();}
+  if(id==='modalRelManual'){
+    document.getElementById('relm-mes').value=curMonthKey();
+    ['relm-meta','relm-fat','relm-vendas','relm-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+    document.getElementById('relm-preview').innerHTML='';
+  }
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+// ── VENDA UNIFICADA ──────────────────────────────────────────
+let _vendaClienteId=null; // id se cliente existente, null se novo
+
+function filtrarClientesVenda(q){
+  const dd=document.getElementById('cp-dropdown');
+  const novoBloco=document.getElementById('cp-novo-bloco');
+  const selBloco=document.getElementById('cp-selecionado');
+  if(!q||q.length<1){dd.style.display='none';return;}
+  const resultados=clientes.filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,8);
+  if(resultados.length){
+    dd.style.display='block';
+    dd.innerHTML=resultados.map(c=>{
+      const s=calcStatus(c);const si=SI[s];const t=getTotal(c);
+      return`<div onclick="selecionarClienteVenda('${c.id}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+        <div style="flex:1"><div style="font-weight:600;font-size:13px">${c.nome}</div><div style="font-size:11px;color:var(--muted)">${c.whats||''} · <span class="status ${si.cls}">${si.label}</span> · ${t>0?fmt(t)+' em compras':''}</div></div>
+      </div>`;
+    }).join('')+`<div onclick="usarNomeComoNovo('${q}')" style="padding:10px 14px;cursor:pointer;background:var(--al);color:var(--accent);font-size:12px;font-weight:600;border-radius:0 0 8px 8px" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      ➕ Cadastrar "<strong>${q}</strong>" como novo cliente
+    </div>`;
+    novoBloco.style.display='none';
+  } else {
+    dd.style.display='block';
+    dd.innerHTML=`<div onclick="usarNomeComoNovo('${q}')" style="padding:12px 14px;cursor:pointer;background:var(--al);color:var(--accent);font-size:12px;font-weight:600;border-radius:8px" onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      ➕ Cadastrar "<strong>${q}</strong>" como novo cliente
+    </div>`;
+  }
+}
+
+function selecionarClienteVenda(id){
+  const c=clientes.find(x=>x.id===id);if(!c)return;
+  _vendaClienteId=id;
+  document.getElementById('cp-busca').value=c.nome;
+  document.getElementById('cp-dropdown').style.display='none';
+  document.getElementById('cp-novo-bloco').style.display='none';
+  const sel=document.getElementById('cp-selecionado');
+  sel.style.display='flex';
+  document.getElementById('cp-sel-nome').textContent=c.nome;
+  const s=calcStatus(c);const t=getTotal(c);const nC=(c.compras||[]).filter(p=>p.status==='finalizada').length;
+  document.getElementById('cp-sel-info').textContent=`${SI[s].label} · ${nC} compras · Total: ${fmt(t)}`;
+}
+
+function usarNomeComoNovo(nome){
+  _vendaClienteId=null;
+  document.getElementById('cp-busca').value=nome;
+  document.getElementById('cp-dropdown').style.display='none';
+  document.getElementById('cp-selecionado').style.display='none';
+  document.getElementById('cp-novo-bloco').style.display='block';
+}
+
+function limparClienteVenda(){
+  _vendaClienteId=null;
+  document.getElementById('cp-busca').value='';
+  document.getElementById('cp-selecionado').style.display='none';
+  document.getElementById('cp-novo-bloco').style.display='none';
+  document.getElementById('cp-dropdown').style.display='none';
+  document.getElementById('cp-busca').focus();
+}
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click',e=>{
+  const dd=document.getElementById('cp-dropdown');
+  if(dd&&!dd.contains(e.target)&&e.target.id!=='cp-busca') dd.style.display='none';
+});
+
+function populateClienteSelect(){
+  // mantido para compatibilidade com addCompraFor
+  document.getElementById('cp-data').value=new Date().toISOString().split('T')[0];
+}
+
+function popularSkuSelect(){
+  const sel=document.getElementById('cp-sku-sel');if(!sel)return;
+  sel.innerHTML='<option value="">+ Selecionar produto do catálogo</option>'+(window.skus||[]).map(s=>`<option value="${s.id}">${s.nome}${s.cat?' ('+s.cat+')':''} — ${s.preco?'R$'+parseFloat(s.preco).toFixed(2):''}</option>`).join('');
+}
+window._cpSkusVendidos=[];
+function adicionarSkuVenda(){
+  const sel=document.getElementById('cp-sku-sel');const qtd=parseInt(document.getElementById('cp-sku-qtd').value)||1;
+  const skuId=sel.value;if(!skuId)return;
+  const sku=window.skus.find(s=>s.id===skuId);if(!sku)return;
+  if(window._cpSkusVendidos.find(x=>x.id===skuId)){alert('Produto já adicionado. Edite a quantidade.');return;}
+  window._cpSkusVendidos.push({id:skuId,nome:sku.nome,cat:sku.cat,preco:sku.preco,qtd});
+  renderSkusVendidos();sel.value='';document.getElementById('cp-sku-qtd').value=1;
+  // Atualiza valor total automaticamente
+  const total=window._cpSkusVendidos.reduce((a,x)=>a+(parseFloat(x.preco||0)*x.qtd),0);
+  if(total>0)document.getElementById('cp-valor').value=total.toFixed(2);
+}
+function renderSkusVendidos(){
+  const el=document.getElementById('cp-skus-lista');if(!el)return;
+  el.innerHTML=window._cpSkusVendidos.map((sv,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:7px;padding:7px 10px">
+      <span style="flex:1;font-size:12px;font-weight:600">${sv.nome} <span style="color:var(--muted);font-weight:400">${sv.cat?'('+sv.cat+')':''}</span></span>
+      <span style="font-size:11px;color:var(--muted)">Qtd:</span>
+      <input type="number" value="${sv.qtd}" min="1" style="width:55px;padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-family:inherit;font-size:12px;text-align:center" oninput="window._cpSkusVendidos[${i}].qtd=parseInt(this.value)||1;atualizarTotalVenda()">
+      <span style="font-size:12px;color:var(--green);font-weight:700">${sv.preco?'R$'+(parseFloat(sv.preco)*sv.qtd).toFixed(2):'—'}</span>
+      <button onclick="window._cpSkusVendidos.splice(${i},1);renderSkusVendidos();atualizarTotalVenda()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px">×</button>
+    </div>`).join('');
+}
+function atualizarTotalVenda(){
+  const total=window._cpSkusVendidos.reduce((a,x)=>a+(parseFloat(x.preco||0)*x.qtd),0);
+  if(total>0)document.getElementById('cp-valor').value=total.toFixed(2);
+}
+async function salvarCliente(){
+  const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
+  await dbInsert('clientes',{nome,whats:document.getElementById('c-whats').value,insta:document.getElementById('c-insta').value,tipo:document.getElementById('c-tipo').value,origem:document.getElementById('c-origem').value,pref:document.getElementById('c-pref').value,pgto:document.getElementById('c-pgto').value,aniv:document.getElementById('c-aniv').value,obs:document.getElementById('c-obs').value,compras:[]});
+  await reloadTable('clientes');
+  closeModal('modalCliente');['c-nome','c-whats','c-insta','c-pref','c-aniv','c-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+function addCompraFor(id){
+  openModal('modalCompra');
+  setTimeout(()=>selecionarClienteVenda(id),100);
+}
+async function salvarCompra(){
+  const nome=document.getElementById('cp-busca').value.trim();
+  const val=document.getElementById('cp-valor').value;
+  if(!nome){alert('Informe ou selecione o cliente.');return;}
+  if(!val){alert('Informe o valor da venda.');return;}
+  let cid=_vendaClienteId;
+  // Se cliente novo, cadastra primeiro
+  if(!cid){
+    const novo=await dbInsert('clientes',{
+      nome, whats:document.getElementById('cp-novo-whats').value,
+      tipo:document.getElementById('cp-novo-tipo').value,
+      origem:document.getElementById('cp-novo-origem').value,
+      pref:document.getElementById('cp-novo-pref').value,
+      compras:[]
+    });
+    await reloadTable('clientes');
+    cid=novo.id;
+  }
+  const c=window.clientes.find(x=>x.id===cid)||{compras:[]};
+  const skusVendidos=window._cpSkusVendidos||[];
+  const compras=[...(c.compras||[]),{
+    id:Date.now().toString(),
+    data:document.getElementById('cp-data').value||new Date().toISOString().split('T')[0],
+    canal:document.getElementById('cp-canal').value,
+    produtos:document.getElementById('cp-produtos').value,
+    skus:skusVendidos,
+    valor:parseFloat(val),
+    status:document.getElementById('cp-status').value,
+    obs:document.getElementById('cp-obs').value
+  }];
+  // Incrementa contador de vendas nos SKUs
+  skusVendidos.forEach(sv=>{
+    const sku=window.skus.find(s=>s.id===sv.id);
+    if(sku){const novoTotal=(parseInt(sku.total_vendas)||0)+parseInt(sv.qtd||1);dbUpdate('skus',sku.id,{total_vendas:novoTotal});}
+  });
+  await dbUpdate('clientes',cid,{compras});
+  await reloadTable('clientes');
+  closeModal('modalCompra');
+  // Limpa campos
+  window._cpSkusVendidos=[];
+  const skuLista=document.getElementById('cp-skus-lista');if(skuLista)skuLista.innerHTML='';
+  limparClienteVenda();
+  ['cp-produtos','cp-obs','cp-valor','cp-novo-whats','cp-novo-pref'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function deleteCliente(id){if(!confirm('Excluir cliente?'))return;await dbDelete('clientes',id);await reloadTable('clientes');}
+
+function editarCliente(id){
+  const c=window.clientes.find(x=>x.id===id);if(!c)return;
+  // Preenche modal existente de cliente para edição
+  document.getElementById('c-nome').value=c.nome||'';
+  document.getElementById('c-whats').value=c.whats||'';
+  document.getElementById('c-insta').value=c.insta||'';
+  document.getElementById('c-tipo').value=c.tipo||'personalizado';
+  document.getElementById('c-origem').value=c.origem||'Instagram';
+  document.getElementById('c-pref').value=c.pref||'';
+  document.getElementById('c-pgto').value=c.pgto||'PIX';
+  document.getElementById('c-aniv').value=c.aniv||'';
+  document.getElementById('c-obs').value=c.obs||'';
+  // Muda título e botão
+  document.querySelector('#modalCliente .modal-title').textContent='Editar Cliente';
+  const btn=document.querySelector('#modalCliente .modal-footer .btn-primary');
+  if(btn){btn.textContent='Salvar alterações';btn.onclick=()=>salvarEdicaoCliente(id);}
+  openModal('modalCliente');
+}
+async function salvarEdicaoCliente(id){
+  const nome=document.getElementById('c-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
+  await dbUpdate('clientes',id,{nome,whats:document.getElementById('c-whats').value,insta:document.getElementById('c-insta').value,tipo:document.getElementById('c-tipo').value,origem:document.getElementById('c-origem').value,pref:document.getElementById('c-pref').value,pgto:document.getElementById('c-pgto').value,aniv:document.getElementById('c-aniv').value,obs:document.getElementById('c-obs').value});
+  await reloadTable('clientes');
+  closeModal('modalCliente');
+  // Restaura modal para modo de cadastro
+  document.querySelector('#modalCliente .modal-title').textContent='Novo Cliente';
+  const btn=document.querySelector('#modalCliente .modal-footer .btn-primary');
+  if(btn){btn.textContent='Salvar cliente';btn.onclick=salvarCliente;}
+}
+
+// Editar compra inline no perfil
+async function editarCompra(clienteId, compraId){
+  const c=window.clientes.find(x=>x.id===clienteId);if(!c)return;
+  const comp=c.compras.find(p=>p.id===compraId);if(!comp)return;
+  const novoStatus=prompt('Status da compra:\n1 - Finalizada e paga\n2 - Aguardando pagamento\n3 - Carrinho abandonado\nAtual: '+comp.status,{finalizada:'1',aguardando:'2',abandonado:'3'}[comp.status]||'1');
+  if(!novoStatus)return;
+  const statusMap={'1':'finalizada','2':'aguardando','3':'abandonado'};
+  const novoVal=prompt('Valor (R$):',comp.valor);
+  if(!novoVal)return;
+  const novasCompras=c.compras.map(p=>p.id===compraId?{...p,status:statusMap[novoStatus]||comp.status,valor:parseFloat(novoVal)||comp.valor}:p);
+  await dbUpdate('clientes',clienteId,{compras:novasCompras});
+  await reloadTable('clientes');
+  verPerfil(clienteId);
+}
+async function salvarHistorico(){
+  const nome=document.getElementById('h-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
+  await dbInsert('historicos',{nome,whats:document.getElementById('h-whats').value,tipo:document.getElementById('h-tipo').value,periodo:document.getElementById('h-periodo').value,total:parseFloat(document.getElementById('h-total').value)||0,motivo:document.getElementById('h-motivo').value,obs:document.getElementById('h-obs').value});
+  closeModal('modalHistorico');['h-nome','h-whats','h-periodo','h-total','h-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function deleteHistorico(id){if(!confirm('Excluir histórico?'))return;await dbDelete('historicos',id);await reloadTable('historicos');}
+
+async function salvarLancamento(){
+  const desc=document.getElementById('lanc-desc').value.trim();const val=document.getElementById('lanc-valor').value;if(!desc||!val){alert('Preencha descrição e valor.');return;}
+  await dbInsert('lancamentos',{tipo:currentLancTipo,descricao:desc,valor:parseFloat(val),venc:document.getElementById('lanc-venc').value,cat:document.getElementById('lanc-cat').value,rec:document.getElementById('lanc-rec').value,nf:document.getElementById('lanc-nf').value,obs:document.getElementById('lanc-obs').value,status:'aberto'});
+  closeModal('modalLancamento');['lanc-desc','lanc-valor','lanc-nf','lanc-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function marcarPago(id){await dbUpdate('lancamentos',id,{status:'pago'});await reloadTable('lancamentos');}
+async function deleteLanc(id){if(!confirm('Excluir lançamento?'))return;await dbDelete('lancamentos',id);await reloadTable('lancamentos');}
+
+function renderCustosList(){const l=document.getElementById('custoList');if(!l)return;l.innerHTML=(window.custos||[]).map((c,i)=>`<div style="display:flex;gap:7px;align-items:center"><input type="text" placeholder="Nome" value="${c.nome||''}" style="flex:1;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;" oninput="window.custos[${i}].nome=this.value"><input type="number" placeholder="R$/mês" value="${c.valor||''}" style="width:110px;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;" oninput="window.custos[${i}].valor=parseFloat(this.value)||0"><button style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer" onclick="window.custos.splice(${i},1);renderCustosList()">×</button></div>`).join('');}
+function addCustoRow(){window.custos.push({nome:'',valor:0});renderCustosList();}
+async function salvarCustos(){await dbUpsertConfig('custos',window.custos);closeModal('modalCustos');}
+
+async function salvarCustoItem(){
+  const nome=document.getElementById('ci-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
+  await dbInsert('custo_items',{nome,valor:parseFloat(document.getElementById('ci-valor').value)||0,tipo:document.getElementById('ci-tipo').value,cat:document.getElementById('ci-cat').value,obs:document.getElementById('ci-obs').value});
+  closeModal('modalCustoItem');['ci-nome','ci-valor','ci-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function deleteCustoItem(id){if(!confirm('Excluir?'))return;await dbDelete('custo_items',id);await reloadTable('custo_items');}
+
+async function salvarFolha(){
+  const nome=document.getElementById('fol-nome').value.trim();if(!nome){alert('Informe o nome.');return;}
+  await dbInsert('folha',{nome,tipo:document.getElementById('fol-tipo').value,mes:document.getElementById('fol-mes').value,bruto:parseFloat(document.getElementById('fol-bruto').value)||0,enc:parseFloat(document.getElementById('fol-enc').value)||0,obs:document.getElementById('fol-obs').value});
+  closeModal('modalFolha');['fol-nome','fol-bruto','fol-enc','fol-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function deleteFolha(id){if(!confirm('Excluir?'))return;await dbDelete('folha',id);await reloadTable('folha');}
+
+async function salvarSKU(){
+  const nome=document.getElementById('sku-nome').value.trim();if(!nome){alert('Informe o nome do produto.');return;}
+  const data={
+    cod:document.getElementById('sku-cod').value.trim(),
+    nome, cat:document.getElementById('sku-cat').value,
+    un:document.getElementById('sku-un').value,
+    preco:parseFloat(document.getElementById('sku-preco').value)||0,
+    especificacao:document.getElementById('sku-desc').value
+  };
+  if(currentSKUId){await dbUpdate('skus',currentSKUId,data);}
+  else{await dbInsert('skus',data);}
+  await reloadTable('skus');
+  closeModal('modalSKU');
+}
+function editSKU(id){
+  const s=skus.find(x=>x.id===id);if(!s)return;currentSKUId=id;
+  document.getElementById('skuModalTitle').textContent='Editar Produto';
+  document.getElementById('btnSalvSKU').textContent='Atualizar produto';
+  document.getElementById('sku-nome').value=s.nome||'';
+  document.getElementById('sku-cod').value=s.cod||'';
+  document.getElementById('sku-cat').value=s.cat||'';
+  document.getElementById('sku-preco').value=s.preco||'';
+  document.getElementById('sku-un').value=s.un||'unidade';
+  document.getElementById('sku-desc').value=s.especificacao||'';
+  openModal('modalSKU');
+}
+async function deleteSKU(id){if(!confirm('Excluir SKU?'))return;await dbDelete('skus',id);await reloadTable('skus');}
+
+async function salvarMovCaixa(){
+  const desc=document.getElementById('mov-desc').value.trim();const val=document.getElementById('mov-valor').value;if(!desc||!val){alert('Preencha descrição e valor.');return;}
+  await dbInsert('mov_caixa',{descricao:desc,tipo:document.getElementById('mov-tipo').value,data:document.getElementById('mov-data').value,valor:parseFloat(val),cat:document.getElementById('mov-cat').value,obs:document.getElementById('mov-obs').value});
+  closeModal('modalMovCaixa');['mov-desc','mov-valor','mov-obs'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+}
+async function deleteMovCaixa(id){if(!confirm('Excluir?'))return;await dbDelete('mov_caixa',id);await reloadTable('mov_caixa');}
+
+// ═══ EXPORT TABELA ═══
+function exportTabela(tableId,fname){
+  const tbl=document.getElementById(tableId);if(!tbl){alert('Sem dados para exportar.');return;}
+  const wb=XLSX.utils.table_to_book(tbl);XLSX.writeFile(wb,fname+'-BuscaPrint.xlsx');
+}
+
+// ═══ IMPORT CLIENTES ═══
+const FA={nome:['nome','name','cliente','contato'],whats:['whatsapp','whats','celular','telefone','tel'],insta:['instagram','insta'],tipo:['tipo','perfil','categoria'],pref:['preferências','preferencias','produtos'],pgto:['pagamento','forma de pagamento'],obs:['observações','obs','anotações']};
+const FL={nome:'Nome *',whats:'WhatsApp',insta:'Instagram',tipo:'Tipo',pref:'Preferências',pgto:'Pagamento',obs:'Observações'};
+let impData=[],impHdrs=[];
+function nk(s){return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();}
+function autoMap(hs){const m={};hs.forEach(h=>{const hn=nk(h);for(const[f,als] of Object.entries(FA)){if(!m[f]&&als.some(a=>hn.includes(a)))m[f]=h;}});return m;}
+async function importarPlanilha(event){
+  const file=event.target.files[0];if(!file)return;event.target.value='';
+  const reader=new FileReader();
+  reader.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:''});if(!rows.length){alert('Planilha vazia.');return;}impData=rows;impHdrs=Object.keys(rows[0]);const am=autoMap(impHdrs);document.getElementById('importPreview').innerHTML=`<div style="display:flex;gap:8px;margin-bottom:12px"><div style="background:var(--green-bg);color:var(--green);border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px">${rows.length} linhas</div><div style="background:var(--blue-bg);color:var(--blue);border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px">${impHdrs.length} colunas</div><div style="background:var(--al);color:var(--accent);border-radius:7px;padding:7px 12px;font-weight:700;font-size:12px">📄 ${file.name}</div></div>`;document.getElementById('mappingFields').innerHTML=Object.entries(FL).map(([f,l])=>`<div class="form-group"><label>${l}</label><select id="map-${f}" style="padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;background:var(--bg);outline:none;"><option value="">— ignorar —</option>${impHdrs.map(h=>`<option value="${h}" ${am[f]===h?'selected':''}>${h}</option>`).join('')}</select></div>`).join('');document.getElementById('importMapping').style.display='block';document.getElementById('btnConfirmImport').style.display='inline-flex';openModal('modalImport');}catch(err){alert('Erro ao ler a planilha.');console.error(err);}};reader.readAsArrayBuffer(file);
+}
+async function confirmarImport(){
+  const btn=document.getElementById('btnConfirmImport');btn.disabled=true;btn.textContent='Importando...';
+  const mp={};Object.keys(FL).forEach(f=>{const s=document.getElementById('map-'+f);if(s&&s.value)mp[f]=s.value;});
+  if(!mp.nome){alert('Mapeie a coluna Nome.');btn.disabled=false;btn.textContent='✅ Importar clientes';return;}
+  const ex=new Set(clientes.map(c=>nk(c.nome)));let imp=0,ign=0;
+  for(const row of impData){const nome=String(row[mp.nome]||'').trim();if(!nome||ex.has(nk(nome))){ign++;continue;}const tr=nk(String(row[mp.tipo]||''));let tipo='personalizado';if(tr.includes('empreend')||tr.includes('revend'))tipo='empreendedor';await dbInsert('clientes',{nome,whats:mp.whats?String(row[mp.whats]||'').trim():'',insta:mp.insta?String(row[mp.insta]||'').trim():'',tipo,pref:mp.pref?String(row[mp.pref]||'').trim():'',pgto:mp.pgto?String(row[mp.pgto]||'').trim():'',obs:mp.obs?String(row[mp.obs]||'').trim():'',compras:[]});imp++;}
+  closeModal('modalImport');btn.disabled=false;btn.textContent='✅ Importar clientes';impData=[];impHdrs=[];
+  setTimeout(()=>alert(`✅ Importação concluída!\n• ${imp} importados\n• ${ign} ignorados`),300);
+}
+async function importarFinanceiro(event){
+  const file=event.target.files[0];if(!file)return;event.target.value='';
+  const reader=new FileReader();
+  reader.onload=async e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:''});let imp=0;for(const row of rows){const vals=Object.values(row);const data=vals.find(v=>String(v).match(/\d{2}\/\d{2}\/\d{4}/));const valor=vals.find(v=>typeof v==='number'&&v!==0);const descVal=vals.find(v=>typeof v==='string'&&v.length>3&&!String(v).match(/\d{2}\/\d{2}/));if(valor!==undefined){await dbInsert('mov_caixa',{descricao:String(descVal||'Importado'),tipo:valor>0?'entrada':'saida',data:data?String(data).split('/').reverse().join('-'):new Date().toISOString().split('T')[0],valor:Math.abs(parseFloat(valor)||0),cat:'Importado'});imp++;}}alert(`✅ ${imp} movimentos importados!`);}catch(err){alert('Erro ao ler planilha financeira.');}};reader.readAsArrayBuffer(file);
+}
+
+// ═══ GESTOR IA ═══
+function getEmpresaSnap(){
+  const monthly=getMonthlyData();const cur=monthly[monthly.length-1]||{fat:0,vendas:0,clientes:0,ticket:0};const prev=monthly[monthly.length-2]||{fat:0};const cm=getCustoMensal();const lucro=cur.fat-cm;
+  const receber=(lancamentos||[]).filter(l=>l.tipo==='receber'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const pagar=(lancamentos||[]).filter(l=>l.tipo==='pagar'&&l.status!=='pago').reduce((a,l)=>a+(parseFloat(l.valor)||0),0);
+  const byS={};clientes.forEach(c=>{const s=calcStatus(c);byS[s]=(byS[s]||0)+1;});
+  const totalSkus=skus.length;const folhaTotal=(folhaList||[]).reduce((a,f)=>a+(parseFloat(f.bruto)||0),0);
+  return`DADOS EM TEMPO REAL — BuscaPrint (Gráfica/Personalizações)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nFINANCEIRO:\n- Fat. mês atual: ${fmt(cur.fat)} | Mês anterior: ${fmt(prev.fat)}\n- Custos mensais: ${fmt(cm)} | Lucro estimado: ${fmt(lucro)} (${lucro>=0?'POSITIVO':'NEGATIVO'})\n- A Receber: ${fmt(receber)} | A Pagar: ${fmt(pagar)}\n- Ticket médio: ${fmt(cur.ticket)} | Vendas no mês: ${cur.vendas}\n- Folha/Pró-labore: ${fmt(folhaTotal)}/mês\nCARTEIRA (${clientes.length} clientes):\n${Object.entries(byS).map(([k,v])=>`- ${SI[k]?.label||k}: ${v}`).join('\n')}\nPRODUTOS: ${totalSkus} SKUs cadastrados\nHISTÓRICO:\n${monthly.slice(-3).map(m=>`- ${m.label}: ${fmt(m.fat)} | ${m.vendas} vendas`).join('\n')}`;
+}
+function initGestor(){addGMsg('ai','Olá! Sou o <strong>Gestor de Empresa BuscaPrint</strong>. 🏢<br><br>Tenho acesso em tempo real a:<br>• Financeiro, DRE, fluxo de caixa e lucro<br>• Carteira completa de clientes<br>• SKUs e precificação<br>• Folha e pró-labore<br><br>Comece com <code>/diagnostico</code> para visão completa do negócio.');}
+function addGMsg(role,html){const msgs=document.getElementById('gestorMessages');const d=document.createElement('div');d.className=`chat-msg ${role}`;d.innerHTML=`<div class="chat-av ${role}">${role==='ai'?'🏢':'👤'}</div><div class="chat-bubble">${html}</div>`;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;}
+function useGestor(cmd){document.getElementById('gestorInput').value=cmd;sendGestor();}
+function gestorKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendGestor();}}
+async function sendGestor(){
+  if(gestorLoading)return;const input=document.getElementById('gestorInput');const text=input.value.trim();if(!text)return;
+  input.value='';autoResize(input);addGMsg('user',text);
+  const sys=`Você é o Gestor de Empresa sênior da BuscaPrint (gráfica/personalizações).\n\n${getEmpresaSnap()}\n\nIdentidade: braço direito do dono. Honesto, direto, ação concreta. Use 🔴 crítico / 🟡 atenção / 🟢 saudável. Todo plano: ação+responsável+prazo+métrica. Responda em português do Brasil.`;
+  gestorHistory.push({role:'user',content:text});gestorLoading=true;document.getElementById('gestorSend').disabled=true;
+  addTyping('gestorMessages','tg');
+  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:gestorHistory})});const data=await r.json();const reply=data.content?.[0]?.text||'Erro.';removeTyping('tg');addGMsg('ai',fmtChat(reply));gestorHistory.push({role:'assistant',content:reply});}
+  catch(e){removeTyping('tg');addGMsg('ai','⚠️ Erro de conexão.');gestorHistory.pop();}
+  gestorLoading=false;document.getElementById('gestorSend').disabled=false;
+}
+
+// ═══ CRM IA ═══
+function initCrm(){addCMsg('ai',`Olá! Sou seu <strong>Consultor de CRM</strong>. 💬<br><br>Carteira atual: <strong>${clientes.length} clientes</strong>.<br>Use os atalhos ou me pergunte sobre abordagens, remarketing e análise de carteira!`);}
+function addCMsg(role,html){const msgs=document.getElementById('crmMessages');const d=document.createElement('div');d.className=`chat-msg ${role}`;d.innerHTML=`<div class="chat-av ${role}">${role==='ai'?'💬':'👤'}</div><div class="chat-bubble">${html}</div>`;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;}
+function useCrm(cmd){document.getElementById('crmInput').value=cmd;sendCrm();}
+function crmKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendCrm();}}
+async function sendCrm(){
+  if(crmLoading)return;const input=document.getElementById('crmInput');const text=input.value.trim();if(!text)return;
+  input.value='';autoResize(input);addCMsg('user',text);
+  const snap=clientes.slice(0,40).map(c=>{const s=calcStatus(c);return`- ${c.nome} | ${SI[s].label} | ${getDays(c)!=null?getDays(c)+'d':'sem compras'} | ${fmt(getTotal(c))} | ${c.tipo||'personalizado'} | pref: ${c.pref||'—'}`;}).join('\n');
+  const sys=`Consultor de CRM BuscaPrint (gráfica/personalizações). Carteira (${clientes.length} clientes):\n${snap||'Sem clientes.'}\nTipos: Personalizado (uso próprio) | Empreendedor (revende). Gere mensagens prontas para WhatsApp. Responda em português do Brasil.`;
+  crmHistory.push({role:'user',content:text});crmLoading=true;document.getElementById('crmSend').disabled=true;
+  addTyping('crmMessages','tc');
+  try{const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:sys,messages:crmHistory})});const data=await r.json();const reply=data.content?.[0]?.text||'Erro.';removeTyping('tc');addCMsg('ai',fmtChat(reply));crmHistory.push({role:'assistant',content:reply});}
+  catch(e){removeTyping('tc');addCMsg('ai','⚠️ Erro de conexão.');crmHistory.pop();}
+  crmLoading=false;document.getElementById('crmSend').disabled=false;
+}
+
+// ═══ HELPERS ═══
+function addTyping(msgsId,tid){const msgs=document.getElementById(msgsId);const d=document.createElement('div');d.className='chat-msg';d.id=tid;d.innerHTML=`<div class="chat-av ai">${msgsId.includes('gestor')?'🏢':'💬'}</div><div class="chat-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;msgs.appendChild(d);msgs.scrollTop=msgs.scrollHeight;}
+function removeTyping(tid){const t=document.getElementById(tid);if(t)t.remove();}
+function fmtChat(t){return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/^#{1,3} (.+)$/gm,'<h3>$1</h3>').replace(/^---$/gm,'<hr>').replace(/^\| (.+) \|$/gm,m=>{const cs=m.split('|').filter(c=>c.trim());if(cs.some(c=>c.includes('---')))return'';return'<tr>'+cs.map(c=>`<td>${c.trim()}</td>`).join('')+'</tr>';}).replace(/(<tr>.*<\/tr>\n?)+/g,m=>`<table><tbody>${m}</tbody></table>`).replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g,m=>`<ul>${m}</ul>`).replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,110)+'px';}
+
+// ══ INIT — Firebase ══
+loadFromCache();
+window.renderAll();
+setSyncStatus('loading');
+loadAll();
+</script>
